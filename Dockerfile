@@ -1,4 +1,25 @@
-FROM alpine:latest
+FROM larjim/kademlialab
+
+RUN apt-get update -y
+RUN apt-get install -y iputils-ping
+RUN apt-get install -y arp-scan
+
+# Remove old versio of Go
+RUN rm -rf /usr/local/go
+
+# Download and install Go
+RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz && \
+    rm go1.22.1.linux-amd64.tar.gz
+
+# Set the PATH environment variable
+ENV PATH=$PATH:/usr/local/go/bin
+
+RUN go version
+
+ADD main.go .
+ADD go.mod .
+ADD /kademlia/ ./kademlia/
 
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
