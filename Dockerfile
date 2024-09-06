@@ -3,8 +3,9 @@ FROM larjim/kademlialab
 RUN apt-get update -y
 RUN apt-get install -y iputils-ping
 RUN apt-get install -y arp-scan
+# arp-scan -l
 
-# Remove old versio of Go
+# Remove old version of Go
 RUN rm -rf /usr/local/go
 
 # Download and install Go
