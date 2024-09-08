@@ -12,7 +12,7 @@ func TestSend() { //TODO: add assertions
 
 	c := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
 
-	n := Network{UDPAddr: udpAddr, PacketSize: 512}
+	n := Network{ListenAddr: udpAddr, PacketSize: 512}
 
 	n.SendMessage(&c, []byte("sent from sender\n"))
 }
@@ -23,7 +23,7 @@ func TestListen() { //TODO: add assertions
 		panic(err)
 	}
 
-	n := Network{UDPAddr: udpAddr, PacketSize: 512}
+	n := Network{ListenAddr: udpAddr, PacketSize: 512}
 
 	n.Listen()
 }

@@ -6,12 +6,12 @@ import (
 )
 
 type Network struct {
-	UDPAddr    *net.UDPAddr
+	ListenAddr *net.UDPAddr
 	PacketSize int
 }
 
 func (network *Network) Listen() {
-	conn, err := net.ListenUDP("udp", network.UDPAddr)
+	conn, err := net.ListenUDP("udp", network.ListenAddr)
 
 	if err != nil {
 		panic(err)
