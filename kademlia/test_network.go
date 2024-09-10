@@ -14,7 +14,7 @@ func TestSend() { //TODO: add assertions
 
 	n := Network{ListenAddr: udpAddr, PacketSize: 512}
 
-	n.SendMessage(&c, []byte("sent from sender\n"))
+	n.SendMessage(&c, Message{"Ping", "Test body"})
 }
 
 func TestListen() { //TODO: add assertions
