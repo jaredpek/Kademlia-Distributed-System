@@ -45,7 +45,16 @@ func (network *Network) Listen() error {
 }
 
 func (network *Network) MessageHandler(message Message, sender *net.UDPAddr) {
-
+	switch message.MsgType {
+	case "ping":
+		panic("MessageHandler for ping is not implemented!")
+	case "findContact":
+		panic("MessageHandler for findContact is not implemented!")
+	case "findData":
+		panic("MessageHandler for findData is not implemented!")
+	case "store":
+		panic("MessageHandler for store is not implemented!")
+	}
 }
 
 // send generic message
