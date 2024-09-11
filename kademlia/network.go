@@ -1,7 +1,9 @@
 package kademlia
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/gob"
+	"log"
 	"net"
 )
 
@@ -10,45 +12,63 @@ type Network struct {
 	PacketSize int
 }
 
-func (network *Network) Listen() {
-	conn, err := net.ListenUDP("udp", network.ListenAddr)
+type Message struct {
+	MsgType string
+	Body    string
+}
 
+func (network *Network) Listen() error {
+	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
-		panic(err)
+		log.Fatal(err) //TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
-
-	defer conn.Close() // close connection when Listen returns
+	defer conn.Close() // close connection when listening is done
 
 	// read messages in a loop
 	for {
 		buf := make([]byte, network.PacketSize)
-		_, addr, err := conn.ReadFromUDP(buf[0:])
+		n, addr, err := conn.ReadFromUDP(buf[0:]) //place read message in buf
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
-		fmt.Print("> ", string(buf[0:])) // TODO: handle the read message
+		dec := gob.NewDecoder(bytes.NewBuffer(buf[:n])) // give buf content as input to decoder
+		var decoded_message Message
+		if err := dec.Decode(&decoded_message); err != nil { //place the decoded message in decoded_message
+			log.Fatal(err)
+		}
 
-		// TODO: respond in an appropriate way
-		conn.WriteToUDP([]byte("response from listener"), addr)
+		network.MessageHandler(decoded_message, addr)
 	}
 }
 
+func (network *Network) MessageHandler(message Message, sender *net.UDPAddr) {
+
+}
+
 // send generic message
-func (network *Network) SendMessage(contact *Contact, msg []byte) {
+func (network *Network) SendMessage(contact *Contact, msg Message) {
+	// set up the connection
 	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	_, err = conn.Write(msg)
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
+
+	if err := enc.Encode(msg); err != nil { //encode
+		log.Fatal(err)
+	}
+
+	_, err = conn.Write(buf.Bytes()) //send encoded message
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
