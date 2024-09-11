@@ -13,8 +13,10 @@ type Network struct {
 }
 
 type Message struct {
-	MsgType string
-	Body    string
+	MsgType  string
+	Body     string
+	Key      string
+	Contacts []Contact
 }
 
 func (network *Network) Listen() error {
@@ -32,7 +34,7 @@ func (network *Network) Listen() error {
 			log.Fatal(err)
 		}
 
-		dec := gob.NewDecoder(bytes.NewBuffer(buf[:n])) // give buf content as input to decoder
+		dec := gob.NewDecoder(bytes.NewBuffer(buf[:n])) // give message as input to decoder
 		var decoded_message Message
 		if err := dec.Decode(&decoded_message); err != nil { //place the decoded message in decoded_message
 			log.Fatal(err)
