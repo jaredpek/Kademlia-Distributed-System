@@ -5,6 +5,7 @@ package main
 import (
 	"d7024e/kademlia"
 	"fmt"
+	"os"
 )
 
 func main() {
@@ -14,6 +15,14 @@ func main() {
 	contact := kademlia.NewContact(id, "localhost:8000")
 	fmt.Println(contact.String())
 	fmt.Printf("%v\n", contact)
+
+	arg := os.Args[1]
+	if arg == "listen" {
+		kademlia.TestListen()
+	} else if arg == "send" {
+		kademlia.TestSend(os.Args[2])
+	}
+
 	//kademlia.TestListen() //TODO: send and listen on one execution
 	//kademlia.TestSend()
 }
