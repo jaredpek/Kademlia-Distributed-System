@@ -20,6 +20,7 @@ type Message struct {
 }
 
 func (network *Network) Listen() error {
+	// go network.MessageHandler(message_channel)
 	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
 		log.Fatal(err) //TODO: unsure how to handle the errors should i return them or log.Fatal(err)
