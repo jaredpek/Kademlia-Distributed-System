@@ -7,6 +7,20 @@
 
 version: "3"
 services:
+  bootstrapNode:
+    image: kadlab:latest
+    stdin_open: true
+    tty: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    networks:
+      kademlia_network:
+        ipv4_address: 172.26.0.2
+
   kademliaNodes:
     image: kadlab:latest # Make sure your Docker image has this name.
     stdin_open: true
@@ -27,7 +41,12 @@ services:
 #      - "4000:80"
     networks:
       - kademlia_network
+    depends_on:
+      - bootstrapNode
       
 networks:
   kademlia_network:
-
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.26.0.0/16
