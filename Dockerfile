@@ -22,6 +22,8 @@ ADD main.go .
 ADD go.mod .
 ADD /kademlia/ ./kademlia/
 
+#CMD go run /home/main.go or something similar to run by default i believe
+
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
 #
