@@ -3,8 +3,8 @@ package kademlia
 const Alpha = 3
 
 type Kademlia struct {
-	Network
-	RoutingTable
+	network Network
+	rt      RoutingTable
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {

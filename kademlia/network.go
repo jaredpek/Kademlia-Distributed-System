@@ -10,6 +10,9 @@ import (
 type Network struct {
 	ListenAddr *net.UDPAddr
 	PacketSize int
+	contact_ch chan Message
+	data_ch    chan Message
+	ping_ch    chan Message
 }
 
 type Message struct {
