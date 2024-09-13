@@ -10,9 +10,10 @@ import (
 type Network struct {
 	ListenAddr  *net.UDPAddr
 	PacketSize  int
-	ContactChan chan Message
-	DataChan    chan Message
-	PingChan    chan Message
+	ContactChan chan ReceivedMessage
+	DataChan    chan ReceivedMessage
+	PingChan    chan ReceivedMessage
+	StoreChan   chan ReceivedMessage
 }
 
 type Message struct {
@@ -22,13 +23,21 @@ type Message struct {
 	Contacts []Contact
 }
 
+type ReceivedMessage struct { // you need the senders ip when passing from listener to message handler
+	Msg    Message
+	Sender *net.UDPAddr
+}
+
 func (network *Network) Listen() error {
-	// go network.MessageHandler(message_channel)
 	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
 		log.Fatal(err) //TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
 	defer conn.Close() // close connection when listening is done
+
+	//spawn a message handler
+	messages := make(chan ReceivedMessage)
+	go network.MessageHandler(messages)
 
 	// read messages in a loop
 	for {
@@ -44,20 +53,23 @@ func (network *Network) Listen() error {
 			log.Fatal(err)
 		}
 
-		network.MessageHandler(decoded_message, addr)
+		messages <- ReceivedMessage{decoded_message, addr} //give received message to the handler
 	}
 }
 
-func (network *Network) MessageHandler(message Message, sender *net.UDPAddr) {
-	switch message.MsgType {
-	case "ping":
-		panic("MessageHandler for ping is not implemented!")
-	case "findContact":
-		panic("MessageHandler for findContact is not implemented!")
-	case "findData":
-		panic("MessageHandler for findData is not implemented!")
-	case "store":
-		panic("MessageHandler for store is not implemented!")
+func (network *Network) MessageHandler(messages chan ReceivedMessage) {
+	for {
+		received_message := <-messages
+		switch received_message.Msg.MsgType {
+		case "ping":
+			panic("MessageHandler for ping is not implemented!")
+		case "findContact":
+			panic("MessageHandler for findContact is not implemented!")
+		case "findData":
+			panic("MessageHandler for findData is not implemented!")
+		case "store":
+			panic("MessageHandler for store is not implemented!")
+		}
 	}
 }
 
