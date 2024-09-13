@@ -16,13 +16,12 @@ RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
 # Set the PATH environment variable
 ENV PATH=$PATH:/usr/local/go/bin
 
-RUN go version
-
 ADD main.go .
 ADD go.mod .
 ADD /kademlia/ ./kademlia/
 
-#CMD go run /home/main.go or something similar to run by default i believe
+# Runs kademlia
+# CMD ["go", "run", "main.go"]
 
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
