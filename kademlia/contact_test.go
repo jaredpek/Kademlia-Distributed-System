@@ -1,7 +1,7 @@
 package kademlia
 
 import (
-	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -84,10 +84,6 @@ func TestCandidatesAppend(t *testing.T) {
 
 	cc.Append(cList)
 
-	if cc.Len() != 3 {
-		t.Fatalf("ContactCandidates is of the wrong size!")
-	}
-
 	if !(cc.contacts[0] == c1 && cc.contacts[1] == c2 && cc.contacts[2] == c3) {
 		t.Fatalf("ContactCandidates does not contain the correct values! \nOriginal values = %v,\nSaved values = %v", &cList, cc.GetContacts(3))
 	}
@@ -108,23 +104,82 @@ func TestCandidatesGetContacts(t *testing.T) {
 	res2 := cc.GetContacts(2)
 	res3 := cc.GetContacts(3)
 
-	fmt.Printf("%v", res)
-	fmt.Printf("%v", res2)
-	fmt.Printf("%v", res3)
+	if !(res[0] == c1 && reflect.DeepEqual(res2, []Contact{c1, c2}) && reflect.DeepEqual(res3, []Contact{c1, c2, c3})) {
+		t.Fatalf("The GetContacts do not return the expected values! \nres: %v \nres2: %v \nres3: %v \nc1: %v \nc2: %v \n c3: %v", res, res2, res3, c1, c2, c3)
+	}
 }
 
 func TestCandidatesSort(t *testing.T) {
+	c1 := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c2 := NewContact(NewKademliaID("EFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c3 := NewContact(NewKademliaID("DFFFFFFF00000000000000000000000000000000"), "localhost:8000")
 
+	// The sorting is done based on distance. Since c2 is further away the final order should be: 1 3 2
+	c1.distance = NewKademliaID("1000000000000000000000000000000000000000")
+	c2.distance = NewKademliaID("3000000000000000000000000000000000000000")
+	c3.distance = NewKademliaID("2000000000000000000000000000000000000000")
+
+	cList := []Contact{c1, c2, c3}
+
+	var cc ContactCandidates
+
+	cc.Append(cList)
+
+	cc.Sort()
+
+	if cc.contacts[1] != c3 || cc.contacts[2] != c2 {
+		t.Fatalf("ContactCandidates where not sorted! \n%v", cc.GetContacts(3))
+	}
 }
 
 func TestCandidatesLen(t *testing.T) {
+	c1 := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c2 := NewContact(NewKademliaID("EFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c3 := NewContact(NewKademliaID("DFFFFFFF00000000000000000000000000000000"), "localhost:8000")
 
+	cList := []Contact{c1, c2, c3}
+
+	var cc ContactCandidates
+
+	cc.Append(cList)
+
+	if cc.Len() != 3 {
+		t.Fatalf("ContactCandidates is of the wrong size! \ncc: %v", cc.GetContacts(3))
+	}
 }
 
 func TestCandidatesSwap(t *testing.T) {
+	c1 := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c2 := NewContact(NewKademliaID("EFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c3 := NewContact(NewKademliaID("DFFFFFFF00000000000000000000000000000000"), "localhost:8000")
 
+	cList := []Contact{c1, c2, c3}
+
+	var cc ContactCandidates
+
+	cc.Append(cList)
+
+	cc.Swap(0, 2)
+
+	if !(cc.contacts[0] == c3 && cc.contacts[2] == c1) {
+		t.Fatalf("The candidates were not swapped! \ncc: %v", cc)
+	}
 }
 
 func TestCandidatesLess(t *testing.T) {
+	c1 := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000")
+	c2 := NewContact(NewKademliaID("EFFFFFFF00000000000000000000000000000000"), "localhost:8000")
 
+	c1.distance = NewKademliaID("1000000000000000000000000000000000000000")
+	c2.distance = NewKademliaID("2000000000000000000000000000000000000000")
+
+	cList := []Contact{c1, c2}
+
+	var cc ContactCandidates
+
+	cc.Append(cList)
+
+	if !cc.Less(0, 1) {
+		t.Fatalf("CandidatesLess does not work as intended!")
+	}
 }
