@@ -3,6 +3,7 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net"
 )
@@ -51,6 +52,7 @@ func (network *Network) Listen() error {
 func (network *Network) MessageHandler(message Message, sender *net.UDPAddr) {
 	switch message.MsgType {
 	case "ping":
+		fmt.Printf("Got ping message from %s", sender)
 		panic("MessageHandler for ping is not implemented!")
 	case "findContact":
 		panic("MessageHandler for findContact is not implemented!")
@@ -58,6 +60,8 @@ func (network *Network) MessageHandler(message Message, sender *net.UDPAddr) {
 		panic("MessageHandler for findData is not implemented!")
 	case "store":
 		panic("MessageHandler for store is not implemented!")
+	default: // should maybe be an error
+		log.Panicf("MessageHandler could not find type: %s", message.MsgType)
 	}
 }
 
@@ -88,6 +92,16 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {
+	network.SendMessage(
+		contact,
+		Message{
+			MsgType:  "ping",
+			Body:     "Ping!",
+			Key:      "",
+			Contacts: nil,
+		},
+	)
+	fmt.Printf("Sending ping to %s", contact.Address)
 	// TODO
 }
 
