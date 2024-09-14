@@ -65,6 +65,7 @@ func (network *Network) Listen() {
 	}
 }
 
+// TODO: add testing
 func (network *Network) MessageHandler(messages chan ReceivedMessage) {
 	for {
 		// TODO: perform appropriate routing table operations
@@ -125,6 +126,7 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 
 // Send ping message to contact and wait for a response
 // TODO: add timeout
+// TODO: add testing
 func (network *Network) SendPingMessage(contact *Contact) {
 	/*network.SendMessage(
 		contact,
