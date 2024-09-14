@@ -3,6 +3,7 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net"
 )
@@ -31,7 +32,7 @@ type ReceivedMessage struct { // you need the senders ip when passing from liste
 func (network *Network) Listen() error {
 	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
-		log.Fatal(err) //TODO: unsure how to handle the errors should i return them or log.Fatal(err)
+		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
 	defer conn.Close() // close connection when listening is done
 
@@ -42,7 +43,7 @@ func (network *Network) Listen() error {
 	// read messages in a loop
 	for {
 		buf := make([]byte, network.PacketSize)
-		n, addr, err := conn.ReadFromUDP(buf[0:]) //place read message in buf
+		n, addr, err := conn.ReadFromUDP(buf[0:]) // place read message in buf
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -89,17 +90,27 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
 
-	if err := enc.Encode(msg); err != nil { //encode
+	if err := enc.Encode(msg); err != nil { // encode
 		log.Fatal(err)
 	}
 
-	_, err = conn.Write(buf.Bytes()) //send encoded message
+	_, err = conn.Write(buf.Bytes()) // send encoded message
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {
+	network.SendMessage(
+		contact,
+		Message{
+			MsgType:  "ping",
+			Body:     "Ping!",
+			Key:      "",
+			Contacts: nil,
+		},
+	)
+	fmt.Printf("Sending ping to %s", contact.Address)
 	// TODO
 }
 
