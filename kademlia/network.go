@@ -6,30 +6,34 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 type Network struct {
-	ListenAddr  *net.UDPAddr
-	PacketSize  int
-	ContactChan chan ReceivedMessage
-	DataChan    chan ReceivedMessage
-	PingChan    chan ReceivedMessage
-	StoreChan   chan ReceivedMessage
+	ListenAddr        *net.UDPAddr
+	PacketSize        int
+	ContactChan       chan ReceivedMessage
+	DataChan          chan ReceivedMessage
+	PingChan          chan ReceivedMessage
+	StoreChan         chan ReceivedMessage
+	ExpectedResponses map[KademliaID](chan ReceivedMessage) // map of RPCID : message channel used by handler
+	lock              sync.Mutex
 }
 
 type Message struct {
 	MsgType  string
 	Body     string
 	Key      string
+	RPCID    KademliaID
 	Contacts []Contact
 }
 
 type ReceivedMessage struct { // you need the senders ip when passing from listener to message handler
 	Msg    Message
-	Sender *net.UDPAddr
+	Sender net.UDPAddr
 }
 
-func (network *Network) Listen() error {
+func (network *Network) Listen() {
 	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
 		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
@@ -54,25 +58,44 @@ func (network *Network) Listen() error {
 			log.Fatal(err)
 		}
 
-		messages <- ReceivedMessage{decoded_message, addr} //give received message to the handler
+		fmt.Println("ip:", addr.IP)
+		fmt.Println("port:", addr.Port)
+		fmt.Println(addr.Zone)
+		messages <- ReceivedMessage{decoded_message, *addr} //give received message to the handler
 	}
 }
 
 func (network *Network) MessageHandler(messages chan ReceivedMessage) {
 	for {
+		// TODO: perform appropriate routing table operations
 		received_message := <-messages
 		switch received_message.Msg.MsgType {
-		case "ping":
-			panic("MessageHandler for ping is not implemented!")
-		case "findContact":
-			panic("MessageHandler for findContact is not implemented!")
-		case "findData":
-			panic("MessageHandler for findData is not implemented!")
-		case "store":
-			panic("MessageHandler for store is not implemented!")
+		case "PING":
+			fmt.Println("Got ping in handler")
+			network.SendPongMessage(&Contact{Address: received_message.Sender.IP.String() + ":1234"}, received_message.Msg.RPCID)
+		case "FIND_CONTACT":
+			network.ContactChan <- received_message
+		case "FIND_DATA":
+			network.DataChan <- received_message
+		case "STORE":
+			network.StoreChan <- received_message
+		case "PONG":
+			fmt.Println("Got pong in handler")
+			network.lock.Lock()
+			chn := network.ExpectedResponses[received_message.Msg.RPCID]
+			fmt.Println("handler putting pong in channel")
+			chn <- received_message
+			network.lock.Unlock()
 		}
 	}
 }
+
+/*
+Implementation of how send message might work. Since we want a response for every single message that we send each SendMessage should be async and coupled with a listen
+(we will be listening with Listen also as an always on server). When sending, we will have our IP and we will send it on some port P. The sender function will reserve P,
+and after sending the message it will block until it recieves a response on P. This way we know that we got a response to the actual sent message (we also check
+sender IP and RPC ID too).
+*/
 
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
@@ -100,8 +123,10 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 	}
 }
 
+// Send ping message to contact and wait for a response
+// TODO: add timeout
 func (network *Network) SendPingMessage(contact *Contact) {
-	network.SendMessage(
+	/*network.SendMessage(
 		contact,
 		Message{
 			MsgType:  "ping",
@@ -111,11 +136,37 @@ func (network *Network) SendPingMessage(contact *Contact) {
 		},
 	)
 	fmt.Printf("Sending ping to %s", contact.Address)
-	// TODO
+	// TODO*/
+
+	fmt.Println("Sending PING...")
+
+	ID := *NewKademliaID("FFFFFFFF10000000000000000000000000000000")
+	m := Message{MsgType: "PING", RPCID: ID}
+	response := make(chan ReceivedMessage)
+
+	network.lock.Lock()
+	network.ExpectedResponses[ID] = response
+	network.lock.Unlock()
+
+	network.SendMessage(contact, m)
+	read := <-response // block here until you get a response
+
+	network.lock.Lock()
+	close(response)
+	delete(network.ExpectedResponses, m.RPCID)
+	network.lock.Unlock()
+
+	fmt.Println("Response from sent message:", read.Msg.MsgType)
+}
+
+func (network *Network) SendPongMessage(contact *Contact, ID KademliaID) {
+	fmt.Print("sending PONG...")
+	m := Message{MsgType: "PONG", RPCID: ID}
+	network.SendMessage(contact, m)
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
-	// TODO
+
 }
 
 func (network *Network) SendFindDataMessage(hash string) {
