@@ -26,14 +26,14 @@ func (network *Network) Listen() error {
 	// go network.MessageHandler(message_channel)
 	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
 	if err != nil {
-		log.Fatal(err) //TODO: unsure how to handle the errors should i return them or log.Fatal(err)
+		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
 	defer conn.Close() // close connection when listening is done
 
 	// read messages in a loop
 	for {
 		buf := make([]byte, network.PacketSize)
-		n, addr, err := conn.ReadFromUDP(buf[0:]) //place read message in buf
+		n, addr, err := conn.ReadFromUDP(buf[0:]) // place read message in buf
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,11 +77,11 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
 
-	if err := enc.Encode(msg); err != nil { //encode
+	if err := enc.Encode(msg); err != nil { // encode
 		log.Fatal(err)
 	}
 
-	_, err = conn.Write(buf.Bytes()) //send encoded message
+	_, err = conn.Write(buf.Bytes()) // send encoded message
 	if err != nil {
 		log.Fatal(err)
 	}
