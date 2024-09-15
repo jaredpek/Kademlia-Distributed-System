@@ -167,8 +167,9 @@ func (network *Network) SendPongMessage(contact *Contact, ID KademliaID) {
 	network.SendMessage(contact, m)
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
-
+func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact) []KademliaID {
+	// will be implemented soon
+	return []KademliaID{}
 }
 
 func (network *Network) SendFindDataMessage(hash string) {

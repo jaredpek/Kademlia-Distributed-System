@@ -44,13 +44,13 @@ func TestRoutingTable(t *testing.T) {
 	for _, contact := range contacts {
 		table.AddContact(contact)
 	}
-	added := table.FindClosestContacts(contacts[0].ID, 20)
+	added := table.FindClosestContacts(contacts[0].ID, bucketSize)
 	if len(added) < quantity {
 		t.Error("[FAIL] Incorrect number of contacts added")
 	}
 
 	// Test routing table closest contacts search that should be in order of [closest -> ... -> furthest]
-	closest := table.FindClosestContacts(contacts[5].ID, 20)
+	closest := table.FindClosestContacts(contacts[5].ID, bucketSize)
 	if 
 		closest[0].ID != contacts[5].ID ||
 		closest[1].ID != contacts[4].ID ||
