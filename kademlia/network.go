@@ -3,45 +3,38 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"net"
 	"sync"
 )
 
 type Network struct {
+	self              Contact
 	ListenAddr        *net.UDPAddr
 	PacketSize        int
-	ContactChan       chan ReceivedMessage
-	DataChan          chan ReceivedMessage
-	PingChan          chan ReceivedMessage
-	StoreChan         chan ReceivedMessage
-	ExpectedResponses map[KademliaID](chan ReceivedMessage) // map of RPCID : message channel used by handler
+	ExpectedResponses map[KademliaID](chan Message) // map of RPCID : message channel used by handler
 	lock              sync.Mutex
 }
 
 type Message struct {
 	MsgType  string
+	Sender   Contact
 	Body     string
 	Key      string
 	RPCID    KademliaID
 	Contacts []Contact
 }
 
-type ReceivedMessage struct { // you need the senders ip when passing from listener to message handler
-	Msg    Message
-	Sender net.UDPAddr
-}
-
 func (network *Network) Listen() {
-	conn, err := net.ListenUDP("udp", network.ListenAddr) // start listening
+	// start listening
+	conn, err := net.ListenUDP("udp", network.ListenAddr)
 	if err != nil {
 		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
 	defer conn.Close() // close connection when listening is done
 
 	//spawn a message handler
-	messages := make(chan ReceivedMessage)
+	messages := make(chan Message)
 	go network.MessageHandler(messages)
 
 	// read messages in a loop
@@ -58,37 +51,43 @@ func (network *Network) Listen() {
 			log.Fatal(err)
 		}
 
-		fmt.Println("ip:", addr.IP)
-		fmt.Println("port:", addr.Port)
-		fmt.Println(addr.Zone)
-		messages <- ReceivedMessage{decoded_message, *addr} //give received message to the handler
+		log.Println("ip:", addr.IP) // for debugging
+		log.Println("port:", addr.Port)
+
+		decoded_message.Sender.Address = addr.IP.String() + ":1234"
+		messages <- decoded_message //give received message to the handler
 	}
 }
 
 // TODO: add testing
-func (network *Network) MessageHandler(messages chan ReceivedMessage) {
+func (network *Network) MessageHandler(messages chan Message) {
 	for {
 		// TODO: perform appropriate routing table operations
 		received_message := <-messages
-		switch received_message.Msg.MsgType {
+		switch received_message.MsgType {
 		case "PING":
-			fmt.Println("Got ping in handler")
-			network.SendPongMessage(&Contact{Address: received_message.Sender.IP.String() + ":1234"}, received_message.Msg.RPCID)
+			go network.SendPongMessage(received_message)
 		case "FIND_CONTACT":
-			network.ContactChan <- received_message
+			go network.SendFindContactResponse(received_message)
 		case "FIND_DATA":
-			network.DataChan <- received_message
+			go network.SendFindDataResponse(received_message)
 		case "STORE":
-			network.StoreChan <- received_message
-		case "PONG":
-			fmt.Println("Got pong in handler")
-			network.lock.Lock()
-			chn := network.ExpectedResponses[received_message.Msg.RPCID]
-			fmt.Println("handler putting pong in channel")
-			chn <- received_message
-			network.lock.Unlock()
+			go network.SendStoreResponse(received_message)
+		case "PONG", "FIND_CONTACT_RESPONSE", "FIND_DATA_RESPONSE", "STORE_RESPONSE":
+			go network.handleResponse(received_message)
 		}
 	}
+}
+
+func (network *Network) handleResponse(response Message) {
+	network.lock.Lock()
+	chn := network.ExpectedResponses[response.RPCID] // grab the channel of the waiting sender
+	if chn != nil {
+		chn <- response // give response to the waiting channel
+		close(chn)      // clean up
+		delete(network.ExpectedResponses, response.RPCID)
+	}
+	network.lock.Unlock()
 }
 
 /*
@@ -127,24 +126,12 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 // Send ping message to contact and wait for a response
 // TODO: add timeout
 // TODO: add testing
-func (network *Network) SendPingMessage(contact *Contact) {
-	/*network.SendMessage(
-		contact,
-		Message{
-			MsgType:  "ping",
-			Body:     "Ping!",
-			Key:      "",
-			Contacts: nil,
-		},
-	)
-	fmt.Printf("Sending ping to %s", contact.Address)
-	// TODO*/
+func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
+	log.Println("Sending PING...")
 
-	fmt.Println("Sending PING...")
-
-	ID := *NewKademliaID("FFFFFFFF10000000000000000000000000000000")
-	m := Message{MsgType: "PING", RPCID: ID}
-	response := make(chan ReceivedMessage)
+	ID := *NewRandomKademliaID()
+	m := Message{MsgType: "PING", RPCID: ID} //TODO: add sender to messages
+	response := make(chan Message)
 
 	network.lock.Lock()
 	network.ExpectedResponses[ID] = response
@@ -153,29 +140,72 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	network.SendMessage(contact, m)
 	read := <-response // block here until you get a response
 
+	out <- read // return the response
+	log.Println("Response from sent message:", read.MsgType)
+	log.Println("Response ID:", read.RPCID)
+}
+
+func (network *Network) SendPongMessage(subject Message) {
+	log.Print("sending PONG...")
+	m := Message{MsgType: "PONG", RPCID: subject.RPCID}
+	network.SendMessage(&subject.Sender, m)
+}
+
+// ask contact about id, receive response in out channel
+func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact, out chan Message) {
+	ID := *NewRandomKademliaID()
+	m := Message{MsgType: "FIND_CONTACT", RPCID: ID, Body: id.String()}
+	response := make(chan Message)
+
 	network.lock.Lock()
-	close(response)
-	delete(network.ExpectedResponses, m.RPCID)
+	network.ExpectedResponses[ID] = response
 	network.lock.Unlock()
 
-	fmt.Println("Response from sent message:", read.Msg.MsgType)
-}
-
-func (network *Network) SendPongMessage(contact *Contact, ID KademliaID) {
-	fmt.Print("sending PONG...")
-	m := Message{MsgType: "PONG", RPCID: ID}
 	network.SendMessage(contact, m)
+	read := <-response // block here until you get a response
+
+	log.Println("Response from sent message:", read.MsgType)
+	out <- read
 }
 
-func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact) []KademliaID {
-	// will be implemented soon
-	return []KademliaID{}
+func (network *Network) SendFindContactResponse(subject Message) {
+
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
+func (network *Network) SendFindDataMessage(hash string, contact *Contact, out chan Message) {
+	ID := *NewRandomKademliaID()
+	m := Message{MsgType: "FIND_DATA", RPCID: ID, Key: hash}
+	response := make(chan Message)
+
+	network.lock.Lock()
+	network.ExpectedResponses[ID] = response
+	network.lock.Unlock()
+
+	network.SendMessage(contact, m)
+	read := <-response // block here until you get a response
+
+	out <- read // return the response
+}
+
+func (network *Network) SendFindDataResponse(subject Message) {
 	// TODO
 }
 
-func (network *Network) SendStoreMessage(data []byte) {
+func (network *Network) SendStoreMessage(key string, data string, contact *Contact, out chan Message) {
+	ID := *NewRandomKademliaID()
+	m := Message{MsgType: "FIND_DATA", RPCID: ID, Key: key, Body: data}
+	response := make(chan Message)
+
+	network.lock.Lock()
+	network.ExpectedResponses[ID] = response
+	network.lock.Unlock()
+
+	network.SendMessage(contact, m)
+	read := <-response // block here until you get a response
+
+	out <- read // return the response
+}
+
+func (network *Network) SendStoreResponse(subject Message) {
 	// TODO
 }

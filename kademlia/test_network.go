@@ -1,8 +1,8 @@
 package kademlia
 
 import (
+	"log"
 	"net"
-	"time"
 )
 
 // send dummy message to ip
@@ -13,14 +13,21 @@ func TestSend(ip string) { //TODO: add assertions
 	}
 
 	c := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), ip+":1234")
-
-	n := Network{ListenAddr: udpAddr, PacketSize: 512, ExpectedResponses: make(map[KademliaID]chan ReceivedMessage)}
+	ch := make(chan Message)
+	n := Network{ListenAddr: udpAddr, PacketSize: 512, ExpectedResponses: make(map[KademliaID]chan Message)}
 
 	go n.Listen()
-	time.Sleep(1 * time.Second)
-	n.SendPingMessage(&c)
+	go n.SendPingMessage(&c, ch)
+	response := <-ch
+	log.Println("Got response: ", response.MsgType)
+	log.Println(response.RPCID)
+	go n.SendPingMessage(&c, ch)
+	response = <-ch
+	log.Println("Got response: ", response.MsgType)
+	log.Println(response.RPCID)
 }
 
+/*
 // send ping message to ip
 func TestSendPing(ip string) {
 	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
@@ -33,7 +40,7 @@ func TestSendPing(ip string) {
 	n := Network{ListenAddr: udpAddr, PacketSize: 512}
 
 	n.SendPingMessage(&c)
-}
+}*/
 
 func TestListen() { //TODO: add assertions
 	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
