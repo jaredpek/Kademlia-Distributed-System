@@ -18,9 +18,9 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 
 		// Create record for new contact
 		contacted[contact.Address] = false
-		
+
 		// Add it to the closest list
-		closest.Append([]Contact{contact}) 
+		closest.Append([]Contact{contact})
 	}
 
 	for {
@@ -34,7 +34,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 			// Continue to the next contact if already contacted
 			if contacted[contact.Address] {
 				continue
-			} 
+			}
 
 			// Send node lookup request to the node and append resulting list of nodes
 			ids = append(ids, kademlia.Network.SendFindContactMessage(target, &contact)...)
@@ -45,7 +45,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 			// If it has reached alpha contacts then finish
 			if len(ids) == Alpha {
 				break
-			} 
+			}
 		}
 
 		// If there are no k closest contacts that are uncontacted, return k closest contacts
