@@ -55,10 +55,17 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 	}
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
+// should return a string with the result. if the data could be found a string with the data and node it
+// was retrived from should be returned. otherwise just return that the file could not be found
+func (kademlia *Kademlia) LookupData(hash string) string {
 	// TODO
+	// return "The requested file could not be downloaded"
+	panic("LookupData not implemented")
 }
 
-func (kademlia *Kademlia) Store(data []byte) {
+// should return the hash of the data if it was successfully uploaded.
+// an error should be returned if the data could not be uploaded
+func (kademlia *Kademlia) Store(data []byte) (error, string) {
 	// TODO
+	panic("Store not implemented")
 }
