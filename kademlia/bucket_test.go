@@ -65,5 +65,32 @@ func TestAddContact(t *testing.T) {
 }
 
 func TestGetContactAndCalcDistance(t *testing.T) {
+	var lBucket = newBucket()
 
+	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+
+	var contacts = lBucket.GetContactAndCalcDistance(NewKademliaID("FFFFFFFF00000000000000000000000000000000"))
+
+	// test that the calculated distance if correct
+	if !(contacts[0].distance.String() == "efffffff00000000000000000000000000000000" &&
+		contacts[1].distance.String() == "dfffffff00000000000000000000000000000000" &&
+		contacts[2].distance.String() == "cfffffff00000000000000000000000000000000") {
+		t.Fatalf("The calculated distances are incorrect!")
+	}
+}
+
+func TestLen(t *testing.T) {
+	var lBucket = newBucket()
+
+	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+
+	bucketLen := lBucket.Len()
+
+	if bucketLen != 3 {
+		t.Fatalf("The returned length is incorrect. lBucket.len() = %d != 3", bucketLen)
+	}
 }
