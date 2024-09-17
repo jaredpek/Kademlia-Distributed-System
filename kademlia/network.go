@@ -9,8 +9,8 @@ import (
 )
 
 type Network struct {
-	self              Contact
-	ListenAddr        *net.UDPAddr
+	Rt                *RoutingTable
+	ListenPort        string
 	PacketSize        int
 	ExpectedResponses map[KademliaID](chan Message) // map of RPCID : message channel used by handler
 	lock              sync.Mutex
@@ -26,8 +26,13 @@ type Message struct {
 }
 
 func (network *Network) Listen() {
+	ListenAddr, err := net.ResolveUDPAddr("udp", network.ListenPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// start listening
-	conn, err := net.ListenUDP("udp", network.ListenAddr)
+	conn, err := net.ListenUDP("udp", ListenAddr)
 	if err != nil {
 		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
@@ -54,7 +59,6 @@ func (network *Network) Listen() {
 		log.Println("ip:", addr.IP) // for debugging
 		log.Println("port:", addr.Port)
 
-		decoded_message.Sender.Address = addr.IP.String() + ":1234"
 		messages <- decoded_message //give received message to the handler
 	}
 }
@@ -63,6 +67,7 @@ func (network *Network) Listen() {
 func (network *Network) MessageHandler(messages chan Message) {
 	for {
 		// TODO: perform appropriate routing table operations
+
 		received_message := <-messages
 		switch received_message.MsgType {
 		case "PING":
@@ -99,6 +104,9 @@ sender IP and RPC ID too).
 
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
+	// make sure the sender field is always this node
+	msg.Sender = network.Rt.me
+
 	// set up the connection
 	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
 	if err != nil {
@@ -127,34 +135,49 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 // TODO: add timeout
 // TODO: add testing
 func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
-	log.Println("Sending PING...")
 
+	//make the message
 	ID := *NewRandomKademliaID()
-	m := Message{MsgType: "PING", RPCID: ID} //TODO: add sender to messages
-	response := make(chan Message)
+	m := Message{
+		MsgType: "PING",
+		RPCID:   ID,
+	}
+	response := make(chan Message) // channel for receiving a response to the sent message
 
 	network.lock.Lock()
-	network.ExpectedResponses[ID] = response
+	network.ExpectedResponses[ID] = response // "subscribe" to receive a response
 	network.lock.Unlock()
 
 	network.SendMessage(contact, m)
 	read := <-response // block here until you get a response
 
-	out <- read // return the response
+	out <- read // return the response through the out channel
+
+	// debug
 	log.Println("Response from sent message:", read.MsgType)
 	log.Println("Response ID:", read.RPCID)
 }
 
+// send pong response to the subject message
 func (network *Network) SendPongMessage(subject Message) {
 	log.Print("sending PONG...")
-	m := Message{MsgType: "PONG", RPCID: subject.RPCID}
+
+	m := Message{
+		MsgType: "PONG",
+		RPCID:   subject.RPCID,
+	}
 	network.SendMessage(&subject.Sender, m)
 }
 
 // ask contact about id, receive response in out channel
 func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact, out chan Message) {
+	// create the message
 	ID := *NewRandomKademliaID()
-	m := Message{MsgType: "FIND_CONTACT", RPCID: ID, Body: id.String()}
+	m := Message{
+		MsgType: "FIND_CONTACT",
+		RPCID:   ID,
+		Body:    id.String(),
+	}
 	response := make(chan Message)
 
 	network.lock.Lock()
@@ -174,7 +197,11 @@ func (network *Network) SendFindContactResponse(subject Message) {
 
 func (network *Network) SendFindDataMessage(hash string, contact *Contact, out chan Message) {
 	ID := *NewRandomKademliaID()
-	m := Message{MsgType: "FIND_DATA", RPCID: ID, Key: hash}
+	m := Message{
+		MsgType: "FIND_DATA",
+		RPCID:   ID,
+		Key:     hash,
+	}
 	response := make(chan Message)
 
 	network.lock.Lock()
@@ -193,7 +220,12 @@ func (network *Network) SendFindDataResponse(subject Message) {
 
 func (network *Network) SendStoreMessage(key string, data string, contact *Contact, out chan Message) {
 	ID := *NewRandomKademliaID()
-	m := Message{MsgType: "FIND_DATA", RPCID: ID, Key: key, Body: data}
+	m := Message{
+		MsgType: "STORE",
+		RPCID:   ID,
+		Key:     key,
+		Body:    data,
+	}
 	response := make(chan Message)
 
 	network.lock.Lock()
