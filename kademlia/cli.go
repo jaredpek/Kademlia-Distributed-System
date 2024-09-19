@@ -18,18 +18,15 @@ func newCli(kademlia *Kademlia) *cli {
 }
 
 // Takes in new user input
-func (cli *cli) userInput() {
+func (cli *cli) userInput() error {
 	var command, input string
 	fmt.Scanf("%s %s", &command, &input)
-	cli.handleInput(command, input)
+	return cli.handleInput(command, input)
 }
 
 // Handles the users input. If the user has entered a command that is not recognised by the implementation
 // the implementation panics. Should maybe be an error.
-func (cli *cli) handleInput(command, input string) {
-
-	err := func() { panic("CLI error: disallowed input") }
-
+func (cli *cli) handleInput(command, input string) error {
 	if input != "" {
 		switch command {
 		case "put":
@@ -37,13 +34,15 @@ func (cli *cli) handleInput(command, input string) {
 		case "get":
 			cli.get(input)
 		default:
-			err()
+			return fmt.Errorf("CLI error: disallowed input")
 		}
 	} else if command == "exit" {
 		cli.exit()
 	} else {
-		err()
+		return fmt.Errorf("CLI error: disallowed input")
 	}
+
+	return nil
 }
 
 // Stores the input by calling the "Store" function in kademlia

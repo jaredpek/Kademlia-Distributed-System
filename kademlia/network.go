@@ -3,8 +3,11 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
+	"os"
 	"sync"
 )
 
@@ -239,5 +242,26 @@ func (network *Network) SendStoreMessage(key string, data string, contact *Conta
 }
 
 func (network *Network) SendStoreResponse(subject Message) {
-	// TODO
+	type StoredData struct {
+		ID   KademliaID
+		Data string
+	}
+	// store data
+	data := StoredData{subject.RPCID, subject.Body}
+
+	res, err := json.Marshal(data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Current JSON:", string(res))
+
+	err = os.WriteFile("stored_values.json", res, 0666)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Values saved!")
 }

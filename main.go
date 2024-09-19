@@ -19,11 +19,11 @@ func main() {
 	arg := os.Args[1]
 	if arg == "listen" {
 		fmt.Println("Listening...")
-		kademlia.TestListen()
+		// kademlia.TestListen()
 	} else if arg == "send" {
-		kademlia.TestSend(os.Args[2])
+		// kademlia.TestSend(os.Args[2])
 	} else if arg == "ping" {
-		kademlia.TestSendPing(os.Args[2])
+		// kademlia.TestSendPing(os.Args[2])
 	}
 
 	//kademlia.TestListen() //TODO: send and listen on one execution

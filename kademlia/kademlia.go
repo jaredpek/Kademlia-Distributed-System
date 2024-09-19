@@ -37,7 +37,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 			}
 
 			// Send node lookup request to the node and append resulting list of nodes
-			ids = append(ids, kademlia.Network.SendFindContactMessage(target, &contact)...)
+			// ids = append(ids, kademlia.Network.SendFindContactMessage(target, &contact)...)
 
 			// Update contact record status
 			contacted[contact.Address] = true

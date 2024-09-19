@@ -1,12 +1,7 @@
 package kademlia
 
-import (
-	"log"
-	"net"
-)
-
 // send dummy message to ip
-func TestSend(ip string) { //TODO: add assertions
+/*func TestSend(ip string) { //TODO: add assertions
 	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
 	if err != nil {
 		panic(err)
@@ -25,7 +20,7 @@ func TestSend(ip string) { //TODO: add assertions
 	response = <-ch
 	log.Println("Got response: ", response.MsgType)
 	log.Println(response.RPCID)
-}
+}*/
 
 /*
 // send ping message to ip
@@ -42,7 +37,7 @@ func TestSendPing(ip string) {
 	n.SendPingMessage(&c)
 }*/
 
-func TestListen() { //TODO: add assertions
+/*func TestListen() { //TODO: add assertions
 	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
 	if err != nil {
 		panic(err)
@@ -51,4 +46,4 @@ func TestListen() { //TODO: add assertions
 	n := Network{ListenAddr: udpAddr, PacketSize: 512}
 
 	n.Listen()
-}
+}*/
