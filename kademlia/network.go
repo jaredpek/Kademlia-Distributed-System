@@ -13,6 +13,7 @@ import (
 
 type Network struct {
 	Rt                *RoutingTable
+	BootstrapIP       string
 	ListenPort        string
 	PacketSize        int
 	ExpectedResponses map[KademliaID](chan Message) // map of RPCID : message channel used by handler
@@ -23,13 +24,13 @@ type Message struct {
 	MsgType  string
 	Sender   Contact
 	Body     string
-	Key      string
+	Key      KademliaID
 	RPCID    KademliaID
 	Contacts []Contact
 }
 
 func (network *Network) Listen() {
-	ListenAddr, err := net.ResolveUDPAddr("udp", network.ListenPort)
+	ListenAddr, err := net.ResolveUDPAddr("udp", ":"+network.ListenPort)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,6 +60,8 @@ func (network *Network) Listen() {
 			log.Fatal(err)
 		}
 
+		decoded_message.Sender.Address = addr.IP.String() + ":" + network.ListenPort // ensure the sender has the correct IP
+
 		log.Println("ip:", addr.IP) // for debugging
 		log.Println("port:", addr.Port)
 
@@ -72,6 +75,16 @@ func (network *Network) MessageHandler(messages chan Message) {
 		// TODO: perform appropriate routing table operations
 
 		received_message := <-messages
+
+		//add the sender to routing table
+		network.Rt.lock.Lock()
+		sender := received_message.Sender
+		sender.CalcDistance(network.Rt.me.ID) // calc distance to self
+		network.Rt.AddContact(sender)
+
+		log.Println(network.Rt.FindClosestContacts(network.Rt.me.ID, 20)) //debug
+		network.Rt.lock.Unlock()
+
 		switch received_message.MsgType {
 		case "PING":
 			go network.SendPongMessage(received_message)
@@ -108,7 +121,9 @@ sender IP and RPC ID too).
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
 	// make sure the sender field is always this node
+	network.lock.Lock()
 	msg.Sender = network.Rt.me
+	network.lock.Unlock()
 
 	// set up the connection
 	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
@@ -173,13 +188,13 @@ func (network *Network) SendPongMessage(subject Message) {
 }
 
 // ask contact about id, receive response in out channel
-func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact, out chan Message) {
+func (network *Network) SendFindContactMessage(id KademliaID, contact *Contact, out chan Message) {
 	// create the message
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "FIND_CONTACT",
 		RPCID:   ID,
-		Body:    id.String(),
+		Key:     id,
 	}
 	response := make(chan Message)
 
@@ -195,10 +210,17 @@ func (network *Network) SendFindContactMessage(id *KademliaID, contact *Contact,
 }
 
 func (network *Network) SendFindContactResponse(subject Message) {
+	closest := network.Rt.FindClosestContacts(&subject.Key, bucketSize)
 
+	m := Message{
+		MsgType:  "FIND_CONTACT_RESPONSE",
+		RPCID:    subject.RPCID,
+		Contacts: closest,
+	}
+	network.SendMessage(&subject.Sender, m)
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact, out chan Message) {
+func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, out chan Message) {
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "FIND_DATA",
@@ -221,7 +243,7 @@ func (network *Network) SendFindDataResponse(subject Message) {
 	// TODO
 }
 
-func (network *Network) SendStoreMessage(key string, data string, contact *Contact, out chan Message) {
+func (network *Network) SendStoreMessage(key KademliaID, data string, contact *Contact, out chan Message) {
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "STORE",

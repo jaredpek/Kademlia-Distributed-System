@@ -1,18 +1,26 @@
 package kademlia
 
-// send dummy message to ip
-/*func TestSend(ip string) { //TODO: add assertions
-	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
-	if err != nil {
-		panic(err)
-	}
+import (
+	"log"
+)
 
-	c := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), ip+":1234")
-	ch := make(chan Message)
-	n := Network{ListenAddr: udpAddr, PacketSize: 512, ExpectedResponses: make(map[KademliaID]chan Message)}
+// send dummy message to ip
+func TestSend() { //TODO: add assertions
+
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+	}
+	c := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "172.26.0.2:1234") // bootstrap node
+	ch := make(chan Message, 5)
+
+	//k := Kademlia{&n, rt}
 
 	go n.Listen()
-	go n.SendPingMessage(&c, ch)
+	go n.SendPingMessage(&c, ch) // ping bootstrap
 	response := <-ch
 	log.Println("Got response: ", response.MsgType)
 	log.Println(response.RPCID)
@@ -20,7 +28,7 @@ package kademlia
 	response = <-ch
 	log.Println("Got response: ", response.MsgType)
 	log.Println(response.RPCID)
-}*/
+}
 
 /*
 // send ping message to ip
@@ -37,13 +45,15 @@ func TestSendPing(ip string) {
 	n.SendPingMessage(&c)
 }*/
 
-/*func TestListen() { //TODO: add assertions
-	udpAddr, err := net.ResolveUDPAddr("udp", ":1234")
-	if err != nil {
-		panic(err)
+func TestListen() { //TODO: add assertions
+
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
 	}
 
-	n := Network{ListenAddr: udpAddr, PacketSize: 512}
-
 	n.Listen()
-}*/
+}

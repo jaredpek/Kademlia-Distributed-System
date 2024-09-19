@@ -5,8 +5,17 @@ package main
 import (
 	"d7024e/kademlia"
 	"fmt"
+	"log"
 	"os"
+	"time"
 )
+
+func printer(k kademlia.Kademlia) {
+	for {
+		log.Println(k.Rt.FindClosestContacts(kademlia.NewRandomKademliaID(), 30))
+		time.Sleep(5 * time.Second)
+	}
+}
 
 func main() {
 	fmt.Println("Pretending to run the kademlia app...")
@@ -21,10 +30,10 @@ func main() {
 		fmt.Println("Listening...")
 		// kademlia.TestListen()
 	} else if arg == "send" {
-		// kademlia.TestSend(os.Args[2])
-	} else if arg == "ping" {
-		// kademlia.TestSendPing(os.Args[2])
-	}
+		kademlia.TestSend()
+	} /*else if arg == "ping" {
+		kademlia.TestSendPing(os.Args[2])
+	}*/
 
 	//kademlia.TestListen() //TODO: send and listen on one execution
 	//kademlia.TestSend()

@@ -1,13 +1,15 @@
 package kademlia
 
-const bucketSize = 20
+import "sync"
 
+const bucketSize = 20
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
 type RoutingTable struct {
 	me      Contact
 	buckets [IDLength * 8]*bucket
+	lock    sync.Mutex
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
