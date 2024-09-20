@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -56,4 +57,50 @@ func TestListen() { //TODO: add assertions
 	}
 
 	n.Listen()
+}
+
+func TestStore() {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+	}
+
+	id := NewRandomKademliaID()
+
+	m := Message{
+		MsgType:  "",
+		Sender:   Contact{},
+		Body:     "This is the message",
+		Key:      *id,
+		RPCID:    KademliaID{},
+		Contacts: nil,
+	}
+
+	fmt.Println("KademliaID:", id)
+
+	n.SendStoreResponse(m)
+}
+
+func TestFindData(id *KademliaID) {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+	}
+
+	m := Message{
+		MsgType:  "",
+		Sender:   Contact{},
+		Body:     "",
+		Key:      *id,
+		RPCID:    KademliaID{},
+		Contacts: nil,
+	}
+
+	n.FindData(m)
 }

@@ -28,9 +28,13 @@ func main() {
 	arg := os.Args[1]
 	if arg == "listen" {
 		fmt.Println("Listening...")
-		// kademlia.TestListen()
+		kademlia.TestListen()
 	} else if arg == "send" {
 		kademlia.TestSend()
+	} else if arg == "store" {
+		kademlia.TestStore()
+	} else if arg == "find" {
+		kademlia.TestFindData(kademlia.NewKademliaID(os.Args[2]))
 	} /*else if arg == "ping" {
 		kademlia.TestSendPing(os.Args[2])
 	}*/

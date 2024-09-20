@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -18,6 +17,12 @@ type Network struct {
 	PacketSize        int
 	ExpectedResponses map[KademliaID](chan Message) // map of RPCID : message channel used by handler
 	lock              sync.Mutex
+}
+
+// Type for data saved in JSON-file
+type StoredData struct {
+	ID   KademliaID
+	Data string
 }
 
 type Message struct {
@@ -241,6 +246,26 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 
 func (network *Network) SendFindDataResponse(subject Message) {
 	// TODO
+
+	// find data
+	// res, err := network.FindData(subject)
+
+	// send response
+}
+
+func (network *Network) FindData(subject Message) (string, error) {
+	fmt.Println("filename:", subject.Key.String())
+	path := "kademlia/values/" + subject.Key.String()
+	res, err := os.ReadFile(path)
+
+	if err != nil {
+		fmt.Println("Could not find file...")
+		return "", err
+	}
+
+	fmt.Println("This value was found:", string(res))
+
+	return "", nil
 }
 
 func (network *Network) SendStoreMessage(key KademliaID, data string, contact *Contact, out chan Message) {
@@ -264,22 +289,9 @@ func (network *Network) SendStoreMessage(key KademliaID, data string, contact *C
 }
 
 func (network *Network) SendStoreResponse(subject Message) {
-	type StoredData struct {
-		ID   KademliaID
-		Data string
-	}
 	// store data
-	data := StoredData{subject.RPCID, subject.Body}
-
-	res, err := json.Marshal(data)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Current JSON:", string(res))
-
-	err = os.WriteFile("stored_values.json", res, 0666)
+	path := "kademlia/values/" + subject.Key.String()
+	err := os.WriteFile(path, []byte(subject.Body), 0666)
 
 	if err != nil {
 		log.Fatal(err)
