@@ -19,12 +19,6 @@ type Network struct {
 	lock              sync.Mutex
 }
 
-// Type for data saved in JSON-file
-type StoredData struct {
-	ID   KademliaID
-	Data string
-}
-
 type Message struct {
 	MsgType  string
 	Sender   Contact
