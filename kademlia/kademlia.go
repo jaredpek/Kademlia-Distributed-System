@@ -2,9 +2,27 @@ package kademlia
 
 const Alpha = 3
 
+// Default network values
+const BootstrapIP = ""
+const ListenPort = ""
+const PacketSize = 0
+
 type Kademlia struct {
 	Network *Network
 	Rt      *RoutingTable
+}
+
+func NewKademlia(me Contact) *Kademlia {
+	Rt := NewRoutingTable(me)
+	return &Kademlia{
+		Network: &Network{
+			Rt: Rt,
+			BootstrapIP: BootstrapIP,
+			ListenPort: ListenPort,
+			PacketSize: 0,
+		},
+		Rt: Rt,
+	}
 }
 
 func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {

@@ -2,7 +2,7 @@ package kademlia
 
 import "sync"
 
-const bucketSize = 20
+const bucketSize = 4
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
