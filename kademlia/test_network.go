@@ -1,7 +1,10 @@
 package kademlia
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 )
 
@@ -55,7 +58,7 @@ func TestListen() { //TODO: add assertions
 	n.Listen()
 }
 
-func TestStore() {
+func TestStore(val string) {
 	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
 	n := Network{
 		ListenPort:        "1234",
@@ -64,12 +67,18 @@ func TestStore() {
 		Rt:                rt,
 	}
 
-	id := NewRandomKademliaID()
+	h := sha1.New()
+
+	io.WriteString(h, val)
+
+	res := h.Sum(nil)
+
+	id := NewKademliaID(hex.EncodeToString(res))
 
 	m := Message{
 		MsgType:  "",
 		Sender:   Contact{},
-		Body:     "This is the message",
+		Body:     val,
 		Key:      *id,
 		RPCID:    KademliaID{},
 		Contacts: nil,

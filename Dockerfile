@@ -21,7 +21,7 @@ ADD go.mod .
 ADD /kademlia/ ./kademlia/
 
 # Runs kademlia
-CMD ["go", "run", "main.go", "listen"]
+# CMD ["go", "run", "main.go", "listen"]
 
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
