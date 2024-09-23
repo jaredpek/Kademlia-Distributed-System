@@ -25,10 +25,6 @@ func TestSend() { //TODO: add assertions
 	response := <-ch
 	log.Println("Got response: ", response.MsgType)
 	log.Println(response.RPCID)
-	go n.SendPingMessage(&c, ch)
-	response = <-ch
-	log.Println("Got response: ", response.MsgType)
-	log.Println(response.RPCID)
 }
 
 /*

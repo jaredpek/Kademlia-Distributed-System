@@ -170,9 +170,10 @@ func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
 
 	out <- read // return the response through the out channel
 
-	// debug
 	log.Println("Response from sent message:", read.MsgType)
 	log.Println("Response ID:", read.RPCID)
+
+	// debug
 }
 
 // send pong response to the subject message
