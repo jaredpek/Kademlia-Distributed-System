@@ -8,15 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 )
-
-func printer(k kademlia.Kademlia) {
-	for {
-		log.Println(k.Rt.FindClosestContacts(kademlia.NewRandomKademliaID(), 30))
-		time.Sleep(5 * time.Second)
-	}
-}
 
 func GetLocalIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
