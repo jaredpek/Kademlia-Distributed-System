@@ -50,22 +50,25 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		closest.Sort()
 
 		// For each contact of the k-closest
-		for _, contact := range closest.GetContacts(bucketSize) {
+		for _, closestContact := range closest.GetContacts(bucketSize) {
 			// Continue to the next contact if already contacted
-			if contacted[contact.Address] {
+			if contacted[closestContact.Address] {
 				continue
 			}
 
 			// Send node lookup request to the node and append resulting list of nodes
-			go kademlia.Network.SendFindContactMessage(target, &contact, responses)
+			go kademlia.Network.SendFindContactMessage(target, &closestContact, responses)
 			message := <-responses
-			message.Contacts = append(message.Contacts, contact)
+			for _, foundContact := range message.Contacts {
+				foundContact.CalcDistance(&target)
+			}
+			message.Contacts = append(message.Contacts, closestContact)
 			closest.Append(message.Contacts)
 
-			contacts = append(contacts, contact)
+			contacts = append(contacts, closestContact)
 
 			// Update contact record status
-			contacted[contact.Address] = true
+			contacted[closestContact.Address] = true
 
 			// If it has reached alpha contacts then finish
 			if len(contacts) == Alpha {
