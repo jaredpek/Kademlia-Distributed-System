@@ -43,7 +43,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 	}
 
 	for {
-		var ids []KademliaID
+		var contacts []Contact
 
 		// Sort the contacts by their distance
 		closest.Sort()
@@ -57,20 +57,23 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 
 			// Send node lookup request to the node and append resulting list of nodes
 			go kademlia.Network.SendFindContactMessage(target, &contact, responses)
+			message := <- responses
+			message.Contacts = append(message.Contacts, contact)
+			closest.Append(message.Contacts)
 
-			ids = append(ids, *contact.ID)
+			contacts = append(contacts, contact)
 
 			// Update contact record status
 			contacted[contact.Address] = true
 
 			// If it has reached alpha contacts then finish
-			if len(ids) == Alpha {
+			if len(contacts) == Alpha {
 				break
 			}
 		}
 
 		// If there are no k closest contacts that are uncontacted, return k closest contacts
-		if len(ids) == 0 {
+		if len(contacts) == 0 {
 			return closest.GetContacts(bucketSize)
 		}
 	}
