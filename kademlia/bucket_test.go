@@ -74,10 +74,10 @@ func TestGetContactAndCalcDistance(t *testing.T) {
 	var contacts = lBucket.GetContactAndCalcDistance(NewKademliaID("FFFFFFFF00000000000000000000000000000000"))
 
 	// test that the calculated distance if correct
-	if !(contacts[0].distance.String() == "efffffff00000000000000000000000000000000" &&
-		contacts[1].distance.String() == "dfffffff00000000000000000000000000000000" &&
-		contacts[2].distance.String() == "cfffffff00000000000000000000000000000000") {
-		t.Fatalf("The calculated distances are incorrect!")
+	if !(contacts[2].distance.String() == "e000000000000000000000000000000000000000" &&
+		contacts[1].distance.String() == "d000000000000000000000000000000000000000" &&
+		contacts[0].distance.String() == "c000000000000000000000000000000000000000") {
+		t.Fatalf("The calculated distances are incorrect! \n%s \n%s \n%s", contacts[0].distance.String(), contacts[1].distance.String(), contacts[2].distance.String())
 	}
 }
 

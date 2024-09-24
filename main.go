@@ -6,6 +6,7 @@ import (
 	"d7024e/kademlia"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"time"
 )
@@ -17,6 +18,18 @@ func printer(k kademlia.Kademlia) {
 	}
 }
 
+func GetLocalIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddress := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddress.IP
+}
+
 func main() {
 	fmt.Println("Pretending to run the kademlia app...")
 	// Using stuff from the kademlia package here. Something like...
@@ -24,6 +37,8 @@ func main() {
 	contact := kademlia.NewContact(id, "localhost:8000")
 	fmt.Println(contact.String())
 	fmt.Printf("%v\n", contact)
+
+	fmt.Println(GetLocalIP())
 
 	arg := os.Args[1]
 	if arg == "listen" {

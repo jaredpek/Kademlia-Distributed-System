@@ -16,10 +16,10 @@ func NewKademlia(me Contact) *Kademlia {
 	Rt := NewRoutingTable(me)
 	return &Kademlia{
 		Network: &Network{
-			Rt: Rt,
+			Rt:          Rt,
 			BootstrapIP: BootstrapIP,
-			ListenPort: ListenPort,
-			PacketSize: 0,
+			ListenPort:  ListenPort,
+			PacketSize:  0,
 		},
 		Rt: Rt,
 	}
@@ -57,7 +57,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 
 			// Send node lookup request to the node and append resulting list of nodes
 			go kademlia.Network.SendFindContactMessage(target, &contact, responses)
-			message := <- responses
+			message := <-responses
 			message.Contacts = append(message.Contacts, contact)
 			closest.Append(message.Contacts)
 
