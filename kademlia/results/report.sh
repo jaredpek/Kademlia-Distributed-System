@@ -1,1 +1,0 @@
-go tool cover -html=results/coverage.out
