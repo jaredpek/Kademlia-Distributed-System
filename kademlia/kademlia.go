@@ -16,10 +16,11 @@ func NewKademlia(me Contact) *Kademlia {
 	Rt := NewRoutingTable(me)
 	return &Kademlia{
 		Network: &Network{
-			Rt: Rt,
-			BootstrapIP: BootstrapIP,
-			ListenPort: ListenPort,
-			PacketSize: 0,
+			Rt:                Rt,
+			BootstrapIP:       BootstrapIP,
+			ListenPort:        ListenPort,
+			PacketSize:        0,
+			ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		},
 		Rt: Rt,
 	}
