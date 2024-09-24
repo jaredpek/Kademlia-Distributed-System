@@ -8,6 +8,26 @@ import (
 	"log"
 )
 
+func TestSendListenLocal1() {
+	me := NewContact(NewRandomKademliaID(), "127.0.0.1:1234")
+	rt := NewRoutingTable(me)
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+	}
+	ch := make(chan Message, 5)
+
+	//k := Kademlia{&n, rt}
+
+	go n.Listen()
+	go n.SendPingMessage(&me, ch) // ping bootstrap
+	response := <-ch
+	log.Println("Got response: ", response.MsgType)
+	log.Println(response.RPCID)
+}
+
 // send dummy message to ip
 func TestSend() { //TODO: add assertions
 
