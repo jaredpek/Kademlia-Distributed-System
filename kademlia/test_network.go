@@ -28,6 +28,39 @@ func TestSendListenLocal1() {
 	log.Println(response.RPCID)
 }
 
+func TestDocker() {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+	}
+
+	k := Kademlia{&n, rt}
+
+	go n.Listen()
+	k.JoinNetwork()
+	for {
+	}
+}
+
+func TestJoin() {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		BootstrapIP:       "172.26.0.2:1234",
+	}
+
+	k := Kademlia{&n, rt}
+
+	go n.Listen()
+	k.JoinNetwork()
+}
+
 // send dummy message to ip
 func TestSend() { //TODO: add assertions
 

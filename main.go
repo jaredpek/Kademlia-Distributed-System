@@ -42,8 +42,10 @@ func main() {
 		kademlia.TestStore(os.Args[2])
 	} else if arg == "find" {
 		kademlia.TestFindData(kademlia.NewKademliaID(os.Args[2]))
-	} else if arg == "t" {
-		kademlia.TestSendListenLocal1()
+	} else if arg == "d" {
+		kademlia.TestDocker()
+	} else if arg == "join" {
+		kademlia.TestJoin()
 	}
 
 	/*else if arg == "ping" {

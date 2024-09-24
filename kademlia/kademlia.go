@@ -1,11 +1,13 @@
 package kademlia
 
+import "log"
+
 const Alpha = 3
 
 // Default network values
-const BootstrapIP = ""
-const ListenPort = ""
-const PacketSize = 0
+const BootstrapIP = "172.26.0.2:1234"
+const ListenPort = "1234"
+const PacketSize = 1024
 
 type Kademlia struct {
 	Network *Network
@@ -19,7 +21,7 @@ func NewKademlia(me Contact) *Kademlia {
 			Rt:                Rt,
 			BootstrapIP:       BootstrapIP,
 			ListenPort:        ListenPort,
-			PacketSize:        0,
+			PacketSize:        PacketSize,
 			ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		},
 		Rt: Rt,
@@ -27,6 +29,7 @@ func NewKademlia(me Contact) *Kademlia {
 }
 
 func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
+	log.Println("Performing lookup contact")
 	var closest ContactCandidates
 	var contacted map[string]bool = map[string]bool{}
 	responses := make(chan Message, 5)
@@ -62,6 +65,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 			for i := 0; i < len(message.Contacts); i++ {
 				message.Contacts[i].CalcDistance(&target)
 			}
+			log.Println("Got contact response: ", message.Contacts)
 			message.Contacts = append(message.Contacts, closestContact)
 			closest.Append(message.Contacts)
 
@@ -84,10 +88,12 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
+	log.Println("Joining network")
 	response := make(chan Message)
-	kademlia.Network.SendPingMessage(&Contact{Address: kademlia.Network.BootstrapIP}, response) // ping bootstrap node so that it is added to routing table
-	_ = <-response                                                                              // wait for response
-	kademlia.LookupContact(*kademlia.Rt.me.ID)                                                  // lookup on this node to add close nodes to routing table
+	go kademlia.Network.SendPingMessage(&Contact{Address: kademlia.Network.BootstrapIP}, response) // ping bootstrap node so that it is added to routing table
+	r := <-response
+	log.Println(r.MsgType)                     // wait for response
+	kademlia.LookupContact(*kademlia.Rt.me.ID) // lookup on this node to add close nodes to routing table
 }
 
 // should return a string with the result. if the data could be found a string with the data and node it

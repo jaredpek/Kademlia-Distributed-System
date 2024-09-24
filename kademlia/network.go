@@ -61,8 +61,7 @@ func (network *Network) Listen() {
 
 		decoded_message.Sender.Address = addr.IP.String() + ":" + network.ListenPort // ensure the sender has the correct IP
 
-		log.Println("ip:", addr.IP) // for debugging
-		log.Println("port:", addr.Port)
+		log.Println("received messag from ip: ", addr.IP) // for debugging
 
 		messages <- decoded_message //give received message to the handler
 	}
@@ -119,6 +118,7 @@ sender IP and RPC ID too).
 
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
+	log.Println("Sending message: ", msg.MsgType)
 	// make sure the sender field is always this node
 	network.lock.Lock()
 	msg.Sender = network.Rt.me
