@@ -59,8 +59,8 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 			// Send node lookup request to the node and append resulting list of nodes
 			go kademlia.Network.SendFindContactMessage(target, &closestContact, responses)
 			message := <-responses
-			for _, foundContact := range message.Contacts {
-				foundContact.CalcDistance(&target)
+			for i := 0; i < len(message.Contacts); i++ {
+				message.Contacts[i].CalcDistance(&target)
 			}
 			message.Contacts = append(message.Contacts, closestContact)
 			closest.Append(message.Contacts)
