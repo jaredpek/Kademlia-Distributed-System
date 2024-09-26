@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type cli struct {
@@ -27,6 +28,8 @@ func (cli *cli) userInput() error {
 // Handles the users input. If the user has entered a command that is not recognised by the implementation
 // the implementation panics. Should maybe be an error.
 func (cli *cli) handleInput(command, input string) error {
+	err := fmt.Errorf("CLI error: disallowed input")
+
 	if input != "" {
 		switch command {
 		case "put":
@@ -34,15 +37,20 @@ func (cli *cli) handleInput(command, input string) error {
 		case "get":
 			cli.get(input)
 		default:
-			return fmt.Errorf("CLI error: disallowed input")
+			return err
 		}
-	} else if command == "exit" {
-		cli.exit()
 	} else {
-		return fmt.Errorf("CLI error: disallowed input")
+		switch command {
+		case "show":
+			cli.show()
+		case "exit":
+			cli.exit()
+		default:
+			return err
+		}
 	}
 
-	return nil
+	return err
 }
 
 // Stores the input by calling the "Store" function in kademlia
@@ -60,6 +68,21 @@ func (cli *cli) put(input string) {
 // Tries to get the data corresponding to the hash.
 func (cli *cli) get(hash string) {
 	fmt.Println(cli.Kademlia.LookupData(hash)) // print of result should maybe not be here
+}
+
+func (cli *cli) show() {
+	rtInfo := "Routing table:\n"
+
+	currRt := cli.Kademlia.Rt.buckets
+
+	for i, val := range currRt {
+		rtInfo += "Content in bucket " + strconv.Itoa(i) + "\n"
+		for e := val.list.Front(); e != nil; e = e.Next() {
+			rtInfo += "  " + e.Value.(Contact).ID.String() + "\n"
+		}
+	}
+
+	fmt.Println(rtInfo)
 }
 
 // Terminates the node
