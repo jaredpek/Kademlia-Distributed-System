@@ -3,12 +3,16 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"sync"
+	"time"
 )
+
+const timeout = 10 * time.Second
 
 type Network struct {
 	Rt                *RoutingTable
@@ -42,7 +46,7 @@ func (network *Network) Listen() {
 	defer conn.Close() // close connection when listening is done
 
 	//spawn a message handler
-	messages := make(chan Message)
+	messages := make(chan Message, 50) // large buffer because of network startup, might receive 50 at once
 	go network.MessageHandler(messages)
 
 	// read messages in a loop
@@ -109,13 +113,6 @@ func (network *Network) handleResponse(response Message) {
 	network.lock.Unlock()
 }
 
-/*
-Implementation of how send message might work. Since we want a response for every single message that we send each SendMessage should be async and coupled with a listen
-(we will be listening with Listen also as an always on server). When sending, we will have our IP and we will send it on some port P. The sender function will reserve P,
-and after sending the message it will block until it recieves a response on P. This way we know that we got a response to the actual sent message (we also check
-sender IP and RPC ID too).
-*/
-
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
 	log.Println("Sending message: ", msg.MsgType)
@@ -148,38 +145,47 @@ func (network *Network) SendMessage(contact *Contact, msg Message) {
 	}
 }
 
+// Send message to contact and await a response. Time out after 10 seconds
+func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) (Message, error) {
+	response := make(chan Message) // channel for receiving a response to the sent message
+
+	network.lock.Lock()
+	network.ExpectedResponses[message.RPCID] = response // "subscribe" to receive a response
+	network.lock.Unlock()
+
+	network.SendMessage(contact, message)
+
+	select {
+	case read := <-response: // got a response
+		log.Println("Response from sent message:", read.MsgType)
+		log.Println("Response ID:", read.RPCID)
+		return read, nil
+	case <-time.After(timeout): // no response
+		log.Println("Time out while waiting for message: ", message.RPCID)
+		return Message{}, errors.New("Timeout")
+	}
+}
+
 // Send ping message to contact and wait for a response
 // TODO: add timeout
 // TODO: add testing
 func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
-
 	//make the message
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "PING",
 		RPCID:   ID,
 	}
-	response := make(chan Message) // channel for receiving a response to the sent message
 
-	network.lock.Lock()
-	network.ExpectedResponses[ID] = response // "subscribe" to receive a response
-	network.lock.Unlock()
-
-	network.SendMessage(contact, m)
-	read := <-response // block here until you get a response
-
-	out <- read // return the response through the out channel
-
-	log.Println("Response from sent message:", read.MsgType)
-	log.Println("Response ID:", read.RPCID)
-
-	// debug
+	response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
+	if err != nil {                                           // there is a timeout, no response
+		out <- Message{}
+	}
+	out <- response // return the response through the out channel
 }
 
 // send pong response to the subject message
 func (network *Network) SendPongMessage(subject Message) {
-	log.Print("sending PONG...")
-
 	m := Message{
 		MsgType: "PONG",
 		RPCID:   subject.RPCID,
@@ -196,17 +202,12 @@ func (network *Network) SendFindContactMessage(id KademliaID, contact *Contact, 
 		RPCID:   ID,
 		Key:     id,
 	}
-	response := make(chan Message)
 
-	network.lock.Lock()
-	network.ExpectedResponses[ID] = response
-	network.lock.Unlock()
-
-	network.SendMessage(contact, m)
-	read := <-response // block here until you get a response
-
-	log.Println("Response from sent message:", read.MsgType)
-	out <- read
+	response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
+	if err != nil {                                           // there is a timeout, no response
+		return
+	}
+	out <- response // return the response through the out channel
 }
 
 func (network *Network) SendFindContactResponse(subject Message) {
@@ -227,16 +228,12 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 		RPCID:   ID,
 		Key:     hash,
 	}
-	response := make(chan Message)
 
-	network.lock.Lock()
-	network.ExpectedResponses[ID] = response
-	network.lock.Unlock()
-
-	network.SendMessage(contact, m)
-	read := <-response // block here until you get a response
-
-	out <- read // return the response
+	response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
+	if err != nil {                                           // there is a timeout, no response
+		return
+	}
+	out <- response // return the response through the out channel
 }
 
 func (network *Network) SendFindDataResponse(subject Message) {
@@ -271,16 +268,12 @@ func (network *Network) SendStoreMessage(key KademliaID, data string, contact *C
 		Key:     key,
 		Body:    data,
 	}
-	response := make(chan Message)
 
-	network.lock.Lock()
-	network.ExpectedResponses[ID] = response
-	network.lock.Unlock()
-
-	network.SendMessage(contact, m)
-	read := <-response // block here until you get a response
-
-	out <- read // return the response
+	response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
+	if err != nil {                                           // there is a timeout, no response
+		return
+	}
+	out <- response // return the response through the out channel
 }
 
 func (network *Network) SendStoreResponse(subject Message) {
