@@ -29,7 +29,7 @@ func NewKademlia(me Contact) *Kademlia {
 }
 
 func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
-	log.Println("Performing lookup contact")
+	log.Println("[FIND_CONTACT] Performing lookup contact")
 	var closest ContactCandidates
 	var contacted map[string]bool = map[string]bool{}
 	responses := make(chan Message, 5)
@@ -55,29 +55,38 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		// For each contact of the k-closest
 		for _, closestContact := range closest.GetContacts(bucketSize) {
 			// Continue to the next contact if already contacted
-			if contacted[closestContact.Address] {
-				continue
-			}
+			if contacted[closestContact.Address] { continue }
 
-			// Send node lookup request to the node and append resulting list of nodes
+			// Stop sending find contact requests if reached alpha nodoes
+			if len(contacts) >= Alpha { break }
+				
+			// Send node lookup request to the node async
 			go kademlia.Network.SendFindContactMessage(target, &closestContact, responses)
-			message := <-responses
-			for i := 0; i < len(message.Contacts); i++ {
-				message.Contacts[i].CalcDistance(&target)
-			}
-			log.Println("Got contact response: ", message.Contacts)
-			message.Contacts = append(message.Contacts, closestContact)
-			closest.Append(message.Contacts)
-
-			contacts = append(contacts, closestContact)
 
 			// Update contact record status
 			contacted[closestContact.Address] = true
+			contacts = append(contacts, closestContact)
+		}
 
-			// If it has reached alpha contacts then finish
-			if len(contacts) == Alpha {
-				break
+		// For each contact that was sent a find contact message
+		for i := 0; i < len(contacts); i++ {
+			// Receive the response from the channel
+			message := <- responses
+
+			// Print list of contacts
+			log.Printf("[FIND_CONTACT] Got contact response: ")
+			for _, foundContact := range message.Contacts {
+				log.Printf("	%s\n", foundContact.ID.String())
 			}
+
+			// For each contact that was received from the message
+			for j := 0; j < len(message.Contacts); j++ {
+				// Calculate the distance between the target and the contact
+				message.Contacts[j].CalcDistance(&target)
+			}
+
+			// Add the found contacts to the list of closest contacts
+			closest.Append(message.Contacts)
 		}
 
 		// If there are no k closest contacts that are uncontacted, return k closest contacts
