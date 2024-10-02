@@ -240,14 +240,14 @@ func (network *Network) SendFindDataResponse(subject Message) {
 	// TODO
 
 	// find data
-	// res, err := network.FindData(subject)
+	// res, err := network.FindData(subject.Key.String())
 
 	// send response
 }
 
-func (network *Network) FindData(subject Message) (string, error) {
-	fmt.Println("filename:", subject.Key.String())
-	path := "kademlia/values/" + subject.Key.String()
+func (network *Network) FindData(key string) (string, error) {
+	fmt.Println("filename:", key)
+	path := "kademlia/values/" + key
 	res, err := os.ReadFile(path)
 
 	if err != nil {
@@ -257,7 +257,7 @@ func (network *Network) FindData(subject Message) (string, error) {
 
 	fmt.Println("This value was found:", string(res))
 
-	return "", nil
+	return string(res), nil
 }
 
 func (network *Network) SendStoreMessage(key KademliaID, data string, contact *Contact, out chan Message) {

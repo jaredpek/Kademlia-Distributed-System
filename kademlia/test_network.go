@@ -160,7 +160,7 @@ func TestFindData(id *KademliaID) {
 		Contacts: nil,
 	}
 
-	n.FindData(m)
+	n.FindData(m.Key.String())
 }
 
 func TestRest() {
@@ -168,5 +168,5 @@ func TestRest() {
 	k := NewKademlia(c)
 	r := newRest(k)
 
-	r.startServer("127.0.0.1:8080")
+	r.StartServer("127.0.0.1:8080")
 }

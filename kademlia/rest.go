@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"encoding/hex"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -13,6 +14,7 @@ type Rest struct {
 	Router   *gin.Engine
 }
 
+// newRest returns a new instance of the REST interface
 func newRest(kademlia *Kademlia) *Rest {
 	gin := gin.Default()
 
@@ -23,22 +25,31 @@ func newRest(kademlia *Kademlia) *Rest {
 	return rest
 }
 
-func (r *Rest) startServer(ip string) {
-	r.Router.GET("/objects/:hash", r.getObject)
-	r.Router.POST("/objects", r.createObject)
+// Starts the Rest server and which listens for HTTP requests.
+func (r *Rest) StartServer(ip string) {
+	r.Router.GET("/objects/:hash", r.GetObject)
+	r.Router.POST("/objects", r.CreateObject)
 
 	r.Router.Run(ip)
 }
 
-func (r *Rest) getObject(c *gin.Context) {
+// Looks for an object in the kademlia network. An REST response is sent back with the result.
+func (r *Rest) GetObject(c *gin.Context) {
 	hash := c.Param("hash")
 
-	res := r.Kademlia.LookupData(hash)
+	// TODO: change to actually using Kademlia.LookupData
+	res, err := r.Kademlia.Network.FindData(hash)
 
-	c.IndentedJSON(http.StatusNotFound, res)
+	if err != nil {
+		fmt.Printf("Error in getObject: %s", err)
+		c.IndentedJSON(http.StatusNotFound, err.Error())
+	}
+
+	c.IndentedJSON(http.StatusFound, res)
 }
 
-func (r *Rest) createObject(c *gin.Context) {
+// Creates a new object in the kademlia network. If no error is returned a 201 REST response is sent back.
+func (r *Rest) CreateObject(c *gin.Context) {
 	type inputData struct {
 		Data string `json:"data"`
 	}
