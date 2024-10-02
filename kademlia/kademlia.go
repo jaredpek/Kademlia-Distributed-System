@@ -55,11 +55,15 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		// For each contact of the k-closest
 		for _, closestContact := range closest.GetContacts(bucketSize) {
 			// Continue to the next contact if already contacted
-			if contacted[closestContact.Address] { continue }
+			if contacted[closestContact.Address] {
+				continue
+			}
 
 			// Stop sending find contact requests if reached alpha nodoes
-			if len(contacts) >= Alpha { break }
-				
+			if len(contacts) >= Alpha {
+				break
+			}
+
 			// Send node lookup request to the node async
 			go kademlia.Network.SendFindContactMessage(target, &closestContact, responses)
 
@@ -71,12 +75,12 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		// For each contact that was sent a find contact message
 		for i := 0; i < len(contacts); i++ {
 			// Receive the response from the channel
-			message := <- responses
+			message := <-responses
 
 			// Print list of contacts
-			log.Printf("[FIND_CONTACT] Got contact response: ")
+			log.Println("[FIND_CONTACT] Got contact response: ")
 			for _, foundContact := range message.Contacts {
-				log.Printf("	%s\n", foundContact.ID.String())
+				log.Printf("  %s\n", foundContact.ID.String())
 			}
 
 			// For each contact that was received from the message

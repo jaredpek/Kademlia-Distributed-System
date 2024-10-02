@@ -46,6 +46,8 @@ func main() {
 		kademlia.TestDocker()
 	} else if arg == "join" {
 		kademlia.TestJoin()
+	} else if arg == "rest" {
+		kademlia.TestRest()
 	}
 
 	/*else if arg == "ping" {

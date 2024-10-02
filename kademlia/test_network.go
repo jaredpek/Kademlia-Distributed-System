@@ -162,3 +162,11 @@ func TestFindData(id *KademliaID) {
 
 	n.FindData(m)
 }
+
+func TestRest() {
+	c := NewContact(NewRandomKademliaID(), "127.0.0.1")
+	k := NewKademlia(c)
+	r := newRest(k)
+
+	r.startServer("127.0.0.1:8080")
+}
