@@ -84,6 +84,8 @@ func (network *Network) MessageHandler(messages chan Message) {
 		sender.CalcDistance(network.Rt.me.ID) // calc distance to self
 		network.Rt.AddContact(sender)
 
+		fmt.Println("Added contact:", sender)
+
 		log.Println(network.Rt.FindClosestContacts(network.Rt.me.ID, 20)) //debug
 		network.Rt.lock.Unlock()
 

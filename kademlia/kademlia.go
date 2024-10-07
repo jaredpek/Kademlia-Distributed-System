@@ -84,6 +84,11 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 			// Print list of contacts
 			log.Println("[FIND_CONTACT] Got contact response: ")
 			for _, foundContact := range message.Contacts {
+				kademlia.Network.Rt.lock.Lock()
+				sender := foundContact
+				sender.CalcDistance(kademlia.Rt.me.ID) // calc distance to self
+				kademlia.Network.Rt.AddContact(sender)
+				kademlia.Network.Rt.lock.Unlock()
 				log.Printf("  %s\n", foundContact.ID.String())
 			}
 
