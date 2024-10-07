@@ -21,6 +21,8 @@ ADD go.mod .
 ADD go.sum .
 ADD /kademlia/ ./kademlia/
 
+RUN go get
+
 # Runs kademlia
 # CMD ["go", "run", "main.go", "d"]
 
