@@ -45,8 +45,8 @@ func TestDocker() {
 	}
 }
 
-func TestJoin() {
-	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
+func TestJoin(ip string) {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), ip))
 	n := Network{
 		ListenPort:        "1234",
 		PacketSize:        1024,

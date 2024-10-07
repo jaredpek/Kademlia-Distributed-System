@@ -19,32 +19,32 @@ func newCli(kademlia *Kademlia) *cli {
 }
 
 // Takes in new user input
-func (cli *cli) userInput() error {
+func (cli *cli) UserInput() error {
 	var command, input string
 	fmt.Scanf("%s %s", &command, &input)
-	return cli.handleInput(command, input)
+	return cli.HandleInput(command, input)
 }
 
 // Handles the users input. If the user has entered a command that is not recognised by the implementation
 // the implementation panics. Should maybe be an error.
-func (cli *cli) handleInput(command, input string) error {
+func (cli *cli) HandleInput(command, input string) error {
 	err := fmt.Errorf("CLI error: disallowed input")
 
 	if input != "" {
 		switch command {
 		case "put":
-			cli.put(input)
+			cli.Put(input)
 		case "get":
-			cli.get(input)
+			cli.Get(input)
 		default:
 			return err
 		}
 	} else {
 		switch command {
 		case "show":
-			cli.show()
+			cli.Show()
 		case "exit":
-			cli.exit()
+			cli.Exit()
 		default:
 			return err
 		}
@@ -54,7 +54,7 @@ func (cli *cli) handleInput(command, input string) error {
 }
 
 // Stores the input by calling the "Store" function in kademlia
-func (cli *cli) put(input string) {
+func (cli *cli) Put(input string) {
 	data, _ := hex.DecodeString(input)
 	err, hash := cli.Kademlia.Store(data)
 
@@ -66,11 +66,11 @@ func (cli *cli) put(input string) {
 }
 
 // Tries to get the data corresponding to the hash.
-func (cli *cli) get(hash string) {
+func (cli *cli) Get(hash string) {
 	fmt.Println(cli.Kademlia.LookupData(hash)) // print of result should maybe not be here
 }
 
-func (cli *cli) show() {
+func (cli *cli) Show() {
 	rtInfo := "Routing table:\n"
 
 	currRt := cli.Kademlia.Rt.buckets
@@ -86,6 +86,6 @@ func (cli *cli) show() {
 }
 
 // Terminates the node
-func (cli *cli) exit() {
+func (cli *cli) Exit() {
 	os.Exit(0)
 }

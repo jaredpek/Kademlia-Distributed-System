@@ -30,7 +30,7 @@ func main() {
 	fmt.Println(contact.String())
 	fmt.Printf("%v\n", contact)
 
-	fmt.Println(GetLocalIP())
+	fmt.Println(GetLocalIP().String())
 
 	arg := os.Args[1]
 	if arg == "listen" {
@@ -45,7 +45,9 @@ func main() {
 	} else if arg == "d" {
 		kademlia.TestDocker()
 	} else if arg == "join" {
-		kademlia.TestJoin()
+		fmt.Println("GET HERE1")
+		kademlia.TestJoin(GetLocalIP().String())
+		fmt.Println("GET HERE2")
 	} else if arg == "rest" {
 		kademlia.TestRest()
 	}

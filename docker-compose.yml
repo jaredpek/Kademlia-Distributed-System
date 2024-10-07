@@ -20,6 +20,7 @@ services:
     networks:
       kademlia_network:
         ipv4_address: 172.26.0.2
+    command: ["go", "run", "main.go", "listen"]
 
   kademliaNodes:
     image: kadlab:latest # Make sure your Docker image has this name.
@@ -37,6 +38,7 @@ services:
         delay: 5s
         max_attempts: 3
         window: 10s
+    command: ["go", "run", "main.go", "join"]
 #    ports:
 #      - "4000:80"
     networks:

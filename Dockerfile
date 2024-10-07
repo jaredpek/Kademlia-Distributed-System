@@ -18,6 +18,7 @@ ENV PATH=$PATH:/usr/local/go/bin
 
 ADD main.go .
 ADD go.mod .
+ADD go.sum .
 ADD /kademlia/ ./kademlia/
 
 # Runs kademlia
