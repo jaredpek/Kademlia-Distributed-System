@@ -1,6 +1,10 @@
 package kademlia
 
-import "log"
+import (
+	"fmt"
+	"log"
+	"strconv"
+)
 
 const Alpha = 3
 
@@ -107,6 +111,20 @@ func (kademlia *Kademlia) JoinNetwork() {
 	r := <-response
 	log.Println(r.MsgType)                     // wait for response
 	kademlia.LookupContact(*kademlia.Rt.me.ID) // lookup on this node to add close nodes to routing table
+
+	rtInfo := "Routing table:\n"
+	currRt := kademlia.Network.Rt.buckets
+
+	for i, val := range currRt {
+		rtInfo += "Content in bucket " + strconv.Itoa(i) + "\n"
+		for e := val.list.Front(); e != nil; e = e.Next() {
+			rtInfo += "  " + e.Value.(Contact).ID.String() + "\n"
+		}
+	}
+
+	fmt.Println(rtInfo)
+
+	fmt.Println("my id:", kademlia.Rt.me.ID)
 }
 
 // should return a string with the result. if the data could be found a string with the data and node it

@@ -57,8 +57,8 @@ func TestJoin(ip string) {
 
 	k := Kademlia{&n, rt}
 
-	go n.Listen()
-	k.JoinNetwork()
+	go k.JoinNetwork()
+	n.Listen()
 }
 
 // send dummy message to ip
