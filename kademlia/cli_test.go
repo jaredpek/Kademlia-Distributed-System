@@ -5,7 +5,7 @@ import (
 )
 
 func TestHandleInput(t *testing.T) {
-	cli := newCli(&Kademlia{})
+	cli := NewCli(&Kademlia{})
 	err := cli.HandleInput("not an input\n", "")
 
 	errStr := err.Error()
@@ -45,7 +45,7 @@ func TestShow(t *testing.T) {
 	k.Rt.AddContact(contacts[5])
 	k.Rt.AddContact(contacts[6])
 
-	cli := newCli(k)
+	cli := NewCli(k)
 
 	cli.Show()
 	// need to add assertion

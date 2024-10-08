@@ -1,10 +1,11 @@
 package kademlia
 
 import (
-	"encoding/hex"
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type cli struct {
@@ -12,7 +13,7 @@ type cli struct {
 }
 
 // Creates a new instance of a cli struct. Takes an instance of kademlia as an input
-func newCli(kademlia *Kademlia) *cli {
+func NewCli(kademlia *Kademlia) *cli {
 	cli := &cli{}
 	cli.Kademlia = kademlia
 	return cli
@@ -20,8 +21,42 @@ func newCli(kademlia *Kademlia) *cli {
 
 // Takes in new user input
 func (cli *cli) UserInput() error {
-	var command, input string
-	fmt.Scanf("%s %s", &command, &input)
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter a command: ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input) // Remove any leading/trailing whitespace
+
+	// Split the input into parts
+	parts := strings.Fields(input)
+
+	if len(parts) == 0 {
+		return fmt.Errorf("CLI Error: No command entered")
+	}
+
+	command := parts[0]
+
+	var data string
+
+	if command == "put" {
+		// "put" can accept multiple words after it
+		if len(parts) > 1 {
+			data = strings.Join(parts[1:], " ")
+			fmt.Println("Put command with data:", data)
+		} else {
+			return fmt.Errorf("CLI Error: Invalid put command. No data provided")
+		}
+	} else if command == "get" {
+		// "get" can only accept a single word after it
+		if len(parts) == 2 {
+			data = parts[1]
+			fmt.Println("Get command with data:", data)
+		} else {
+			return fmt.Errorf("CLI Error: Invalid get command. Only provide the name of the file after 'get'")
+		}
+	} else {
+		return fmt.Errorf("CLI Error: Invalid command. Must start with 'put' or 'get'")
+	}
+
 	return cli.HandleInput(command, input)
 }
 
@@ -55,7 +90,7 @@ func (cli *cli) HandleInput(command, input string) error {
 
 // Stores the input by calling the "Store" function in kademlia
 func (cli *cli) Put(input string) {
-	data, _ := hex.DecodeString(input)
+	data := []byte(input)
 	err, hash := cli.Kademlia.Store(data)
 
 	if err != nil { // print of result should maybe not be here

@@ -52,6 +52,19 @@ func main() {
 		fmt.Println("GET HERE2")
 	} else if arg == "rest" {
 		kademlia.TestRest()
+	} else if arg == "cli" {
+		ip := GetLocalIP().String()
+		c := kademlia.NewContact(kademlia.NewRandomKademliaID(), ip)
+		k := kademlia.NewKademlia(c)
+		var cli = kademlia.NewCli(k)
+
+		go k.Network.Listen()
+		go k.JoinNetwork()
+
+		for {
+			fmt.Println("You are currently using the Kademlia CLI!")
+			cli.UserInput()
+		}
 	}
 
 	/*else if arg == "ping" {
