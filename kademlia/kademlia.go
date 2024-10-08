@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"strconv"
@@ -143,6 +144,23 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 // should return the hash of the data if it was successfully uploaded.
 // an error should be returned if the data could not be uploaded
 func (kademlia *Kademlia) Store(data []byte) (error, string) {
-	// TODO
-	panic("Store not implemented")
+	// check that data fits requriements for KademliaID
+	h := sha1.New()
+	h.Write(data)
+	var res [IDLength]byte
+	copy(res[:], h.Sum(nil))
+
+	var dataID KademliaID = res
+
+	// find the K nearest nodes
+	closestNodes := kademlia.LookupContact(dataID)
+
+	fmt.Println("[STORE]: Closest nodes to string:", closestNodes)
+
+	// send Store instruction to each node
+	for _, n := range closestNodes {
+		kademlia.Network.SendStoreMessage(dataID, data, &n)
+	}
+
+	return nil, dataID.String()
 }

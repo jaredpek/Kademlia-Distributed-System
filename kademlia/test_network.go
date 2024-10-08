@@ -111,7 +111,7 @@ func TestListen() { //TODO: add assertions
 	n.Listen()
 }
 
-func TestStore(val string) {
+func TestLocalStore(val string) {
 	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
 	n := Network{
 		ListenPort:        "1234",
@@ -140,6 +140,24 @@ func TestStore(val string) {
 	fmt.Println("KademliaID:", id)
 
 	n.SendStoreResponse(m)
+}
+
+func TestStore(val string, ip string) {
+	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), ip))
+	n := Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		BootstrapIP:       "172.26.0.2:1234",
+	}
+
+	k := Kademlia{&n, rt}
+
+	go n.Listen()
+	k.JoinNetwork()
+
+	k.Store([]byte(val))
 }
 
 func TestFindData(id *KademliaID) {

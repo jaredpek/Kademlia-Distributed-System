@@ -39,7 +39,9 @@ func main() {
 	} else if arg == "send" {
 		kademlia.TestSend()
 	} else if arg == "store" {
-		kademlia.TestStore(os.Args[2])
+		//kademlia.TestLocalStore(os.Args[2]
+		fmt.Println("User input:", os.Args[2])
+		kademlia.TestStore(os.Args[2], GetLocalIP().String())
 	} else if arg == "find" {
 		kademlia.TestFindData(kademlia.NewKademliaID(os.Args[2]))
 	} else if arg == "d" {

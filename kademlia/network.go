@@ -3,6 +3,7 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -97,6 +98,7 @@ func (network *Network) MessageHandler(messages chan Message) {
 		case "FIND_DATA":
 			go network.SendFindDataResponse(received_message)
 		case "STORE":
+			fmt.Println("GOT STORE MESSAGE")
 			go network.SendStoreResponse(received_message)
 		case "PONG", "FIND_CONTACT_RESPONSE", "FIND_DATA_RESPONSE", "STORE_RESPONSE":
 			go network.handleResponse(received_message)
@@ -262,20 +264,25 @@ func (network *Network) FindData(key string) (string, error) {
 	return string(res), nil
 }
 
-func (network *Network) SendStoreMessage(key KademliaID, data string, contact *Contact, out chan Message) {
+func (network *Network) SendStoreMessage(key KademliaID, data []byte, contact *Contact /*, out chan Message*/) {
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "STORE",
 		RPCID:   ID,
 		Key:     key,
-		Body:    data,
+		Body:    string(data),
 	}
 
-	response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
+	fmt.Println("Value in body:", hex.EncodeToString(data))
+
+	// since Store does not return a message should not be needed
+	/*response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
 	if err != nil {                                           // there is a timeout, no response
 		return
 	}
-	out <- response // return the response through the out channel
+	out <- response // return the response through the out channel*/
+
+	network.SendMessage(contact, m)
 }
 
 func (network *Network) SendStoreResponse(subject Message) {
