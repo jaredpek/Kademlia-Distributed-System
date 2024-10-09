@@ -88,6 +88,8 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 				kademlia.Network.Rt.lock.Lock()
 				sender := foundContact
 				sender.CalcDistance(kademlia.Rt.me.ID) // calc distance to self
+				fmt.Println("SENDER ID:", sender.ID, "\nME ID:", kademlia.Rt.me.ID, "\nDISTANCE:", sender.distance, "\nDISTANCE ADDRESS", &sender.distance)
+				fmt.Println("CURRENT SENDER:", sender)
 				kademlia.Network.Rt.AddContact(sender)
 				kademlia.Network.Rt.lock.Unlock()
 				log.Printf("  %s\n", foundContact.ID.String())
@@ -155,7 +157,9 @@ func (kademlia *Kademlia) Store(data []byte) (error, string) {
 	// find the K nearest nodes
 	closestNodes := kademlia.LookupContact(dataID)
 
-	fmt.Println("[STORE]: Closest nodes to string:", closestNodes)
+	for _, n := range closestNodes {
+		fmt.Println("[STORE]: Closest nodes to string:", "\n ID:", n.ID, "\n ADDRESS", n.Address, "\n DIST:", n.distance)
+	}
 
 	// send Store instruction to each node
 	for _, n := range closestNodes {

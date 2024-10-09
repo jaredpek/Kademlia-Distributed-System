@@ -24,6 +24,11 @@ func (cli *cli) UserInput() error {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter a command: ")
 	input, _ := reader.ReadString('\n')
+	return cli.processInput(input)
+}
+
+// Local function that process the input before it is handled
+func (cli *cli) processInput(input string) error {
 	input = strings.TrimSpace(input) // Remove any leading/trailing whitespace
 
 	// Split the input into parts
