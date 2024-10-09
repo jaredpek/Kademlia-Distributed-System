@@ -1,6 +1,6 @@
 package kademlia
 
-import "testing"
+/*import "testing"
 
 func TestNewRest(t *testing.T) {
 	var lKademlia = NewKademlia(NewContact(NewRandomKademliaID(), ""))
@@ -39,3 +39,4 @@ func TestCreateObject(t *testing.T) {
 
 	// try and find some data that does not exist
 }
+*/

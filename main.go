@@ -50,8 +50,6 @@ func main() {
 		fmt.Println("GET HERE1")
 		kademlia.TestJoin(GetLocalIP().String())
 		fmt.Println("GET HERE2")
-	} else if arg == "rest" {
-		kademlia.TestRest()
 	} else if arg == "cli" {
 		ip := GetLocalIP().String()
 		c := kademlia.NewContact(kademlia.NewRandomKademliaID(), ip)
@@ -68,7 +66,9 @@ func main() {
 				fmt.Println(err.Error())
 			}
 		}
-	}
+	} /*else if arg == "rest" {
+		kademlia.TestRest()
+	}*/
 
 	/*else if arg == "ping" {
 		kademlia.TestSendPing(os.Args[2])

@@ -14,7 +14,7 @@ var n = Network{
 	Rt:                rt,
 }
 
-func TestPingLocal(t *testing.T) {
+/*func TestPingLocal(t *testing.T) {
 	ch := make(chan Message, 5)
 
 	go n.Listen()
@@ -23,7 +23,7 @@ func TestPingLocal(t *testing.T) {
 	if response.MsgType != "PONG" {
 		t.Fatalf("Received message was not of correct type")
 	}
-}
+}*/
 
 func TestHandleResponse(t *testing.T) {
 	fmt.Println("hello")

@@ -10,14 +10,72 @@ func TestHandleInput(t *testing.T) {
 
 	errStr := err.Error()
 
-	if errStr != "CLI error: disallowed input" {
+	if errStr != "CLI Error: Disallowed input" {
 		t.Fatalf("This input should not be allowed!")
 	}
 
-	// test when implemented
-	/*pass := cli.handleInput("get", "asdadfpok")
+	err = cli.HandleInput("not an input", "not an input")
 
-	pass2 := cli.handleInput("put", "asdasdas")*/
+	errStr = err.Error()
+
+	if errStr != "CLI Error: Disallowed input" {
+		t.Fatalf("This input should not be allowed!")
+	}
+}
+
+func TestProcessInput(t *testing.T) {
+	cli := NewCli(&Kademlia{})
+	err := cli.processInput("")
+
+	errStr := err.Error()
+
+	if errStr != "CLI Error: No command entered" {
+		t.Fatalf("No error returned when empty string was processed!")
+	}
+
+	err = cli.processInput("put asdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasda")
+
+	errStr = err.Error()
+
+	if errStr != "CLI Error: Invalid put command. Data longer than 255 characters" {
+		t.Fatalf("No error returned for 'put' with string over 255 characters!")
+	}
+
+	err = cli.processInput("put")
+
+	errStr = err.Error()
+
+	if errStr != "CLI Error: Invalid put command. No data provided" {
+		t.Fatalf("No error returned for 'put' with no object provided!")
+	}
+
+	err = cli.processInput("get")
+
+	errStr = err.Error()
+
+	if errStr != "CLI Error: Invalid get command. Only provide the hash of the file after 'get'" {
+		t.Fatalf("No error returned for 'get' when something other than a hash was provided")
+	}
+
+	err = cli.processInput("show asdasd")
+
+	errStr = err.Error()
+
+	err2 := cli.processInput("exit asdasd")
+
+	errStr2 := err2.Error()
+
+	if errStr != errStr2 || errStr != "CLI Error: Invalid get show. There should be no characters after the 'show' or 'exit' command" {
+		t.Fatalf("No error returned for 'show' or 'exit' when extra data was provided!")
+	}
+
+	err = cli.processInput("nonsense")
+
+	errStr = err.Error()
+
+	if errStr != "CLI Error: Invalid command. Must start with 'put', 'get', 'show' or 'exit'" {
+		t.Fatalf("No error was returned for an CLI-input that does not exist!")
+	}
 }
 
 func TestShow(t *testing.T) {

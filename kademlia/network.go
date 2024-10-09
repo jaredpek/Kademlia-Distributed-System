@@ -42,6 +42,7 @@ func (network *Network) AddContact(contact Contact) {
 		network.Rt.lock.Unlock()
 
 		responseChan := make(chan Message)
+		log.Println("Network add contact ping.")
 		go network.SendPingMessage(&oldestContact, responseChan) // ping oldest contact
 		response := <-responseChan
 		if response.MsgType == "TIMEOUT" { // if oldest timed out

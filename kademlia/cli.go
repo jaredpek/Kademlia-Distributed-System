@@ -59,7 +59,7 @@ func (cli *cli) processInput(input string) error {
 			data = parts[1]
 			fmt.Println("Get command with data:", data)
 		} else {
-			return fmt.Errorf("CLI Error: Invalid get command. Only provide the name of the file after 'get'")
+			return fmt.Errorf("CLI Error: Invalid get command. Only provide the hash of the file after 'get'")
 		}
 	} else if command == "show" || command == "exit" {
 		// "show" should not contain any word after it
@@ -122,6 +122,7 @@ func (cli *cli) Get(hash string) {
 	fmt.Println(cli.Kademlia.LookupData(hash)) // print of result should maybe not be here
 }
 
+// Shows the nodes routing table
 func (cli *cli) Show() {
 	rtInfo := "Routing table:\n"
 
