@@ -41,6 +41,9 @@ func (cli *cli) UserInput() error {
 		// "put" can accept multiple words after it
 		if len(parts) > 1 {
 			data = strings.Join(parts[1:], " ")
+			if len(data) > 255 {
+				return fmt.Errorf("CLI Error: Invalid put command. Data longer than 255 characters")
+			}
 			fmt.Println("Put command with data:", data)
 		} else {
 			return fmt.Errorf("CLI Error: Invalid put command. No data provided")
@@ -53,17 +56,26 @@ func (cli *cli) UserInput() error {
 		} else {
 			return fmt.Errorf("CLI Error: Invalid get command. Only provide the name of the file after 'get'")
 		}
+	} else if command == "show" || command == "exit" {
+		// "show" should not contain any word after it
+		if len(parts) == 1 {
+			input = ""
+		} else {
+			return fmt.Errorf("CLI Error: Invalid get show. There should be no characters after the 'show' or 'exit' command")
+		}
 	} else {
-		return fmt.Errorf("CLI Error: Invalid command. Must start with 'put' or 'get'")
+		return fmt.Errorf("CLI Error: Invalid command. Must start with 'put', 'get', 'show' or 'exit'")
 	}
 
-	return cli.HandleInput(command, input)
+	return cli.HandleInput(command, data)
 }
 
 // Handles the users input. If the user has entered a command that is not recognised by the implementation
 // the implementation panics. Should maybe be an error.
 func (cli *cli) HandleInput(command, input string) error {
-	err := fmt.Errorf("CLI error: disallowed input")
+	err := fmt.Errorf("CLI Error: Disallowed input")
+
+	fmt.Println("Command:", command, "\nInput:", input)
 
 	if input != "" {
 		switch command {
@@ -85,7 +97,7 @@ func (cli *cli) HandleInput(command, input string) error {
 		}
 	}
 
-	return err
+	return nil
 }
 
 // Stores the input by calling the "Store" function in kademlia

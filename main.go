@@ -63,7 +63,10 @@ func main() {
 
 		for {
 			fmt.Println("You are currently using the Kademlia CLI!")
-			cli.UserInput()
+			err := cli.UserInput()
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 		}
 	}
 
