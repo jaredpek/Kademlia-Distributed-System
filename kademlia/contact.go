@@ -42,7 +42,24 @@ type ContactCandidates struct {
 
 // Append an array of Contacts to the ContactCandidates
 func (candidates *ContactCandidates) Append(contacts []Contact) {
-	candidates.contacts = append(candidates.contacts, contacts...)
+	// Initialise current contacts map
+	var currentContacts map[string]int = map[string]int{};
+	for _, contact := range candidates.contacts { 
+		currentContacts[contact.ID.String()] = 1
+	}
+
+	// Iterate through list of found contacts and add contacts that have not yet been added to candidate contacts
+	for _, contact := range contacts {
+		var id string = contact.ID.String();
+		_, ok := currentContacts[id]
+
+		// If found contact has been added to candiate contacts, then continue
+		if ok { continue }
+
+		// Else, add it to list of candidate contacts
+		currentContacts[id] = 1
+		candidates.contacts = append(candidates.contacts, contact)
+	}
 }
 
 // GetContacts returns the first count number of Contacts
