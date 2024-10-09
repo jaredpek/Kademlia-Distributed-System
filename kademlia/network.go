@@ -32,23 +32,31 @@ type Message struct {
 	Contacts []Contact
 }
 
-func (network *Network) AddContact(contact *Contact) {
+func (network *Network) AddContact(contact Contact) {
 	bucketIndex := network.Rt.getBucketIndex(contact.ID)
 	correctBucket := network.Rt.buckets[bucketIndex]
 	if correctBucket.Len() == bucketSize { // if bucket is full
+		network.Rt.lock.Lock()
 		oldestElement := correctBucket.list.Back()
 		oldestContact := oldestElement.Value.(Contact) // get oldest contact
+		network.Rt.lock.Unlock()
 
 		responseChan := make(chan Message)
 		go network.SendPingMessage(&oldestContact, responseChan) // ping oldest contact
 		response := <-responseChan
 		if response.MsgType == "TIMEOUT" { // if oldest timed out
-			network.Rt.AddContact(*contact) // add new contact
+			network.Rt.lock.Lock()
+			network.Rt.AddContact(contact) // add new contact
+			network.Rt.lock.Unlock()
 		} else {
+			network.Rt.lock.Lock()
 			correctBucket.list.MoveToFront(oldestElement) // else move oldest to front
+			network.Rt.lock.Unlock()
 		}
 	} else { // if bucket is not full
-		network.Rt.AddContact(*contact)
+		network.Rt.lock.Lock()
+		network.Rt.AddContact(contact)
+		network.Rt.lock.Unlock()
 	}
 }
 
@@ -85,7 +93,7 @@ func (network *Network) Listen() {
 
 		decoded_message.Sender.Address = addr.IP.String() + ":" + network.ListenPort // ensure the sender has the correct IP
 
-		log.Println("received messag from ip: ", addr.IP) // for debugging
+		log.Println("received message: ", decoded_message) // for debugging
 
 		messages <- decoded_message //give received message to the handler
 	}
@@ -99,15 +107,9 @@ func (network *Network) MessageHandler(messages chan Message) {
 		received_message := <-messages
 
 		//add the sender to routing table
-		network.Rt.lock.Lock()
 		sender := received_message.Sender
 		sender.CalcDistance(network.Rt.me.ID) // calc distance to self
-		network.Rt.AddContact(sender)
-
-		fmt.Println("Added contact:", sender)
-
-		log.Println(network.Rt.FindClosestContacts(network.Rt.me.ID, 20)) //debug
-		network.Rt.lock.Unlock()
+		go network.AddContact(sender)
 
 		switch received_message.MsgType {
 		case "PING":
@@ -138,7 +140,7 @@ func (network *Network) handleResponse(response Message) {
 
 // send generic message
 func (network *Network) SendMessage(contact *Contact, msg Message) {
-	log.Println("Sending message: ", msg.MsgType)
+	log.Println("Sending message: ", msg)
 	// make sure the sender field is always this node
 	network.lock.Lock()
 	msg.Sender = network.Rt.me
@@ -180,8 +182,6 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 
 	select {
 	case read := <-response: // got a response
-		log.Println("Response from sent message:", read.MsgType)
-		log.Println("Response ID:", read.RPCID)
 		return read
 	case <-time.After(timeout): // no response
 		log.Println("Time out while waiting for message: ", message.RPCID)
