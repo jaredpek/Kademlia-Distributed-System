@@ -14,6 +14,20 @@ import (
 
 const timeout = 10 * time.Second
 
+// interfaces and structs for Messenger
+type Messenger interface {
+	SendMessage(contact *Contact, msg Message)
+}
+
+type UDPMessenger struct {
+	Rt *RoutingTable
+}
+
+type MockMessenger struct {
+	Rt       *RoutingTable
+	Messages []Message
+}
+
 type Network struct {
 	Rt                *RoutingTable
 	BootstrapIP       string
@@ -21,6 +35,7 @@ type Network struct {
 	PacketSize        int
 	ExpectedResponses map[KademliaID](chan Message) // map of RPCID : message channel used by handler
 	lock              sync.Mutex
+	Messenger         Messenger
 }
 
 type Message struct {
@@ -30,6 +45,56 @@ type Message struct {
 	Key      KademliaID
 	RPCID    KademliaID
 	Contacts []Contact
+}
+
+// send generic message
+func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
+	log.Println("Sending message: ", msg)
+	// make sure the sender field is always this node
+	// network.lock.Lock()
+	msg.Sender = m.Rt.me
+	// network.lock.Unlock()
+
+	// set up the connection
+	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
+
+	if err := enc.Encode(msg); err != nil { // encode
+		log.Fatal(err)
+	}
+
+	_, err = conn.Write(buf.Bytes()) // send encoded message
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Mock version of send message. Used for testing
+func (m *MockMessenger) SendMessage(_ *Contact, msg Message) {
+	msg.Sender = m.Rt.me
+	m.Messages = append(m.Messages, msg)
+}
+
+// Get latest message from mock version of send message
+func (m *MockMessenger) GetLatestMessage() (Message, error) {
+	if len(m.Messages) == 0 {
+		return Message{}, fmt.Errorf("MOCK MESSAGE ERROR: There are no more messages! Returning empty message")
+	}
+	mes := m.Messages[0]
+
+	m.Messages = append(m.Messages[:0], m.Messages[1:]...)
+
+	return mes, nil
 }
 
 func (network *Network) AddContact(contact Contact) {
@@ -139,38 +204,6 @@ func (network *Network) handleResponse(response Message) {
 	network.lock.Unlock()
 }
 
-// send generic message
-func (network *Network) SendMessage(contact *Contact, msg Message) {
-	log.Println("Sending message: ", msg)
-	// make sure the sender field is always this node
-	network.lock.Lock()
-	msg.Sender = network.Rt.me
-	network.lock.Unlock()
-
-	// set up the connection
-	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
-
-	if err := enc.Encode(msg); err != nil { // encode
-		log.Fatal(err)
-	}
-
-	_, err = conn.Write(buf.Bytes()) // send encoded message
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // Send message to contact and await a response. Time out after 10 seconds
 func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) Message {
 	response := make(chan Message) // channel for receiving a response to the sent message
@@ -179,7 +212,7 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 	network.ExpectedResponses[message.RPCID] = response // "subscribe" to receive a response
 	network.lock.Unlock()
 
-	network.SendMessage(contact, message)
+	network.Messenger.SendMessage(contact, message)
 
 	select {
 	case read := <-response: // got a response
@@ -194,7 +227,7 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 // TODO: add timeout
 // TODO: add testing
 func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
-	//make the message
+	// make the message
 	ID := *NewRandomKademliaID()
 	m := Message{
 		MsgType: "PING",
@@ -211,7 +244,7 @@ func (network *Network) SendPongMessage(subject Message) {
 		MsgType: "PONG",
 		RPCID:   subject.RPCID,
 	}
-	network.SendMessage(&subject.Sender, m)
+	network.Messenger.SendMessage(&subject.Sender, m)
 }
 
 // ask contact about id, receive response in out channel
@@ -236,7 +269,7 @@ func (network *Network) SendFindContactResponse(subject Message) {
 		RPCID:    subject.RPCID,
 		Contacts: closest,
 	}
-	network.SendMessage(&subject.Sender, m)
+	network.Messenger.SendMessage(&subject.Sender, m)
 }
 
 func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, out chan Message) {
@@ -293,7 +326,7 @@ func (network *Network) SendStoreMessage(key KademliaID, data []byte, contact *C
 	}
 	out <- response // return the response through the out channel*/
 
-	network.SendMessage(contact, m)
+	network.Messenger.SendMessage(contact, m)
 }
 
 func (network *Network) SendStoreResponse(subject Message) {
