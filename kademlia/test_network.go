@@ -107,6 +107,7 @@ func TestListen() { //TODO: add assertions
 		PacketSize:        1024,
 		ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		Rt:                rt,
+		Messenger:         &UDPMessenger{Rt: rt},
 	}
 
 	n.Listen()
