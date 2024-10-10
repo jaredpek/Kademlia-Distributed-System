@@ -2,19 +2,8 @@ package kademlia
 
 import (
 	"testing"
+	"time"
 )
-
-var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
-var other = NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "127.0.0.1:1235")
-var rt = NewRoutingTable(me)
-
-var n = Network{
-	ListenPort:        "1234",
-	PacketSize:        1024,
-	ExpectedResponses: make(map[KademliaID]chan Message, 10),
-	Rt:                rt,
-	Messenger:         &MockMessenger{Rt: rt},
-}
 
 /*func TestPingLocal(t *testing.T) {
 	ch := make(chan Message, 5)
@@ -28,6 +17,12 @@ var n = Network{
 }*/
 
 func TestHandleResponse(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var rt = NewRoutingTable(me)
+	/*-----------------------------------------------------------------------------------------------*/
+
 	id := *NewRandomKademliaID()
 	state := Network{
 		ListenPort:        "1234",
@@ -51,6 +46,19 @@ func TestHandleResponse(t *testing.T) {
 
 // tests that the mock function for sending messages works as expected
 func TestMockSendMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
 	mb1 := "test message"
 	mb2 := "test message 2"
 
@@ -80,7 +88,22 @@ func TestMockSendMessage(t *testing.T) {
 }
 
 func TestSendPongMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var other = NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "127.0.0.1:1235")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
 	id := *NewRandomKademliaID()
+
 	m := Message{
 		RPCID:  id,
 		Sender: other,
@@ -95,8 +118,10 @@ func TestSendPongMessage(t *testing.T) {
 }
 
 func TestSendFindContactResponse(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
 	var rt = NewRoutingTable(me)
-
 	var n = Network{
 		ListenPort:        "1234",
 		PacketSize:        1024,
@@ -104,6 +129,7 @@ func TestSendFindContactResponse(t *testing.T) {
 		Rt:                rt,
 		Messenger:         &MockMessenger{Rt: rt},
 	}
+	/*-----------------------------------------------------------------------------------------------*/
 
 	// other nodes
 	contacts := []Contact{
@@ -143,6 +169,19 @@ func TestSendFindContactResponse(t *testing.T) {
 }
 
 func TestSendAndAwaitResponse(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
 	id := *NewRandomKademliaID()
 
 	m := Message{
@@ -156,22 +195,241 @@ func TestSendAndAwaitResponse(t *testing.T) {
 		t.Fatalf("The 'SendAndAwaitResponse' should timeout after a given period if there is no response!")
 	}
 
-	// TODO: Fix test for SendAndAwait with response
-	/*m.MsgType = "NOTTIMEOUT"
+	m.MsgType = "NOTTIMEOUT"
 
-	n.lock.Lock()
-	ch := n.ExpectedResponses[id]
-	ch <- m // this should now work without blocking
-	n.lock.Unlock()
-
-	fmt.Println("GET HERE?", id)
+	// Ugly solution, but works
+	go func() {
+		n.lock.Lock()
+		ch, ok := n.ExpectedResponses[id]
+		n.lock.Unlock()
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			n.lock.Lock()
+			ch, ok = n.ExpectedResponses[id]
+			n.lock.Unlock()
+		}
+		n.lock.Lock()
+		ch <- m
+		n.lock.Unlock()
+	}()
 
 	// test SendAndAwait where it does not timeout
-	res := n.SendAndAwaitResponse(&me, m)
-
-	fmt.Println(m)
+	res = n.SendAndAwaitResponse(&me, m)
 
 	if res.MsgType != "NOTTIMEOUT" {
 		t.Fatalf("The 'SendAndAwaitResponse' does not read response from array! %s", res.MsgType)
-	}*/
+	}
+}
+
+func TestSendPingMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var other = NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "127.0.0.1:1235")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
+	res := Message{
+		MsgType: "PONG",
+		Sender:  me,
+	}
+
+	resCh := make(chan Message)
+
+	go n.SendPingMessage(&other, resCh)
+
+	// another ugly solution, that technically does not cross process bounderies
+	go func() {
+		m, err := n.Messenger.(*MockMessenger).GetLatestMessage()
+
+		// wait for message to be readable
+		for err != nil {
+			m, err = n.Messenger.(*MockMessenger).GetLatestMessage()
+			time.Sleep(10 * time.Millisecond)
+		}
+
+		id := m.RPCID
+
+		res.RPCID = id
+
+		// wait for channel to be active and send PONG message
+		n.lock.Lock()
+		ch, ok := n.ExpectedResponses[id]
+		n.lock.Unlock()
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			n.lock.Lock()
+			ch, ok = n.ExpectedResponses[id]
+			n.lock.Unlock()
+		}
+
+		n.lock.Lock()
+		ch <- res
+		n.lock.Unlock()
+	}()
+
+	// response sent back from SendPingMessage
+	sentRes := <-resCh
+
+	if sentRes.MsgType != "PONG" {
+		t.Fatalf("The 'SendPingMessage' does not read the response from array!")
+	}
+}
+
+func TestSendStoreMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
+	key := *NewKademliaID("FFF1111100000000000000000000000000000000")
+
+	data := "this is a string"
+
+	n.SendStoreMessage(key, []byte(data), &me)
+
+	res, _ := n.Messenger.(*MockMessenger).GetLatestMessage()
+
+	if !(res.Key.String() == key.String() && res.Body == data && res.Sender.ID.String() == me.ID.String()) {
+		t.Fatalf("The 'SendStoreMessage' does not send the correct message!")
+	}
+}
+
+func TestSendFindContactMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var other = NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "127.0.0.1:1235")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
+	res := Message{
+		MsgType: "SendFindContactResponse",
+		Sender:  other,
+	}
+
+	id := NewRandomKademliaID()
+	resCh := make(chan Message)
+
+	go n.SendFindContactMessage(*id, &me, resCh)
+
+	// another ugly solution, that technically does not cross process bounderies
+	go func() {
+		m, err := n.Messenger.(*MockMessenger).GetLatestMessage()
+
+		// wait for message to be readable
+		for err != nil {
+			m, err = n.Messenger.(*MockMessenger).GetLatestMessage()
+			time.Sleep(10 * time.Millisecond)
+		}
+
+		id := m.RPCID
+
+		res.RPCID = id
+
+		// wait for channel to be active and send PONG message
+		n.lock.Lock()
+		ch, ok := n.ExpectedResponses[id]
+		n.lock.Unlock()
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			n.lock.Lock()
+			ch, ok = n.ExpectedResponses[id]
+			n.lock.Unlock()
+		}
+
+		n.lock.Lock()
+		ch <- res
+		n.lock.Unlock()
+	}()
+
+	sentRes := <-resCh
+
+	if !(sentRes.Sender.ID.String() == other.ID.String() && sentRes.MsgType == "SendFindContactResponse") {
+		t.Fatalf("The 'SendFindContactMessage' does not read the response from array!")
+	}
+}
+
+func TestSendFindDataMessage(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var other = NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "127.0.0.1:1235")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+
+	res := Message{
+		MsgType: "SendFindDataResponse",
+		Sender:  other,
+	}
+
+	resCh := make(chan Message)
+	hash := NewRandomKademliaID()
+
+	go n.SendFindDataMessage(*hash, &me, resCh)
+
+	// another ugly solution, that technically does not cross process bounderies
+	go func() {
+		m, err := n.Messenger.(*MockMessenger).GetLatestMessage()
+
+		// wait for message to be readable
+		for err != nil {
+			m, err = n.Messenger.(*MockMessenger).GetLatestMessage()
+			time.Sleep(10 * time.Millisecond)
+		}
+
+		id := m.RPCID
+
+		res.RPCID = id
+
+		// wait for channel to be active and send PONG message
+		n.lock.Lock()
+		ch, ok := n.ExpectedResponses[id]
+		n.lock.Unlock()
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			n.lock.Lock()
+			ch, ok = n.ExpectedResponses[id]
+			n.lock.Unlock()
+		}
+
+		n.lock.Lock()
+		ch <- res
+		n.lock.Unlock()
+	}()
+
+	sentRes := <-resCh
+
+	if !(sentRes.Sender.ID.String() == other.ID.String() && sentRes.MsgType == "SendFindDataResponse") {
+		t.Fatalf("The 'SendFindDataMessage' does not read the response from array!")
+	}
 }

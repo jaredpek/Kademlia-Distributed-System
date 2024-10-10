@@ -213,6 +213,7 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 	network.lock.Unlock()
 
 	network.Messenger.SendMessage(contact, message)
+	fmt.Println(network.ExpectedResponses[message.RPCID])
 
 	select {
 	case read := <-response: // got a response
