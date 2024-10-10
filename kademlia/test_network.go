@@ -53,6 +53,7 @@ func TestJoin(ip string) {
 		ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		Rt:                rt,
 		BootstrapIP:       "172.26.0.2:1234",
+		Messenger:         &UDPMessenger{Rt: rt},
 	}
 
 	k := Kademlia{&n, rt}

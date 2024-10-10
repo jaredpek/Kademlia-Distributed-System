@@ -28,6 +28,7 @@ func NewKademlia(me Contact) *Kademlia {
 			ListenPort:        ListenPort,
 			PacketSize:        PacketSize,
 			ExpectedResponses: make(map[KademliaID]chan Message, 10),
+			Messenger:         &UDPMessenger{Rt: Rt},
 		},
 		Rt: Rt,
 	}
