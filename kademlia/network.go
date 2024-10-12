@@ -257,12 +257,18 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 }
 
 func (network *Network) SendFindDataResponse(subject Message) {
-	// TODO
+	m := Message{
+		MsgType: "FIND_DATA_RESPONSE",
+		RPCID:   subject.RPCID,
+	}
 
 	// find data
-	// res, err := network.FindData(subject.Key.String())
+	res, err := network.FindData(subject.Key.String())
+	if err == nil { // data could be found
+		m.Body = res
+	}
 
-	// send response
+	network.Messenger.SendMessage(&subject.Sender, m)
 }
 
 func (network *Network) FindData(key string) (string, error) {

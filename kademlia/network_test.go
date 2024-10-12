@@ -141,8 +141,15 @@ func TestSendFindContactResponse(t *testing.T) {
 		NewContact(NewKademliaID("2111111400000000000000000000000000000000"), "localhost:8000"),
 	}
 
+	var pingTest = func(_ *Contact, out chan Message) {
+		m := Message{
+			MsgType: "PONG",
+		}
+		out <- m
+	}
+
 	for _, c := range contacts {
-		rt.AddContact(c, n.SendPingMessage)
+		rt.AddContact(c, pingTest)
 	}
 
 	key := NewKademliaID("FFF1111100000000000000000000000000000000")

@@ -5,8 +5,8 @@ import (
 )
 
 type Detail struct {
-	id string;
-	addr string;
+	id   string
+	addr string
 }
 
 func GetContactDetails(id string, addr string) Detail {
@@ -18,6 +18,13 @@ func GetContact(detail Detail) Contact {
 }
 
 func TestRoutingTable(t *testing.T) {
+	var pingTest = func(_ *Contact, out chan Message) {
+		m := Message{
+			MsgType: "PONG",
+		}
+		out <- m
+	}
+
 	// Sample contacts
 	var details []Detail = []Detail{
 		GetContactDetails("ffffffff00000000000000000000000000000000", "localhost:8000"), // 1101 1110 1110 1110 1110 1110 1110 1011 -> 6
@@ -41,7 +48,7 @@ func TestRoutingTable(t *testing.T) {
 
 	// Test routing table population
 	for _, contact := range contacts {
-		table.AddContact(contact)
+		table.AddContact(contact, pingTest)
 	}
 	added := table.FindClosestContacts(contacts[0].ID, bucketSize)
 	if len(added) != 4 {
@@ -50,11 +57,10 @@ func TestRoutingTable(t *testing.T) {
 
 	// Test routing table closest contacts search that should be in order of [closest -> ... -> furthest]
 	closest := table.FindClosestContacts(contacts[5].ID, bucketSize)
-	if 
-		closest[0].ID != contacts[4].ID ||
+	if closest[0].ID != contacts[4].ID ||
 		closest[1].ID != contacts[1].ID ||
 		closest[2].ID != contacts[2].ID ||
 		closest[3].ID != contacts[3].ID {
-			t.Error("[FAIL] Incorrect closest contacts found")
+		t.Error("[FAIL] Incorrect closest contacts found")
 	}
 }

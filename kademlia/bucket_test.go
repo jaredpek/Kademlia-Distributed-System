@@ -5,6 +5,20 @@ import (
 	"testing"
 )
 
+var pingTest = func(_ *Contact, out chan Message) {
+	m := Message{
+		MsgType: "PONG",
+	}
+	out <- m
+}
+
+var pingTestTimeout = func(_ *Contact, out chan Message) {
+	m := Message{
+		MsgType: "TIMEOUT",
+	}
+	out <- m
+}
+
 func TestNewBucket(t *testing.T) {
 	var lBucket = newBucket()
 	var lBucketType interface{} = lBucket
@@ -37,13 +51,13 @@ func TestAddContact(t *testing.T) {
 	// add element to bucket and check that it can be found in the front
 	id := NewKademliaID("FFFFFFFF00000000000000000000000000000000")
 	var contact = NewContact(id, "localhost:8000")
-	lBucket.AddContact(contact)
+	lBucket.AddContact(contact, pingTest)
 
 	checkFirstElement(t, contact, lBucket)
 
 	// add element that is already in bucket and check that it is moved to the front
-	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
-	lBucket.AddContact(contact)
+	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
+	lBucket.AddContact(contact, pingTest)
 
 	checkFirstElement(t, contact, lBucket)
 
@@ -52,7 +66,7 @@ func TestAddContact(t *testing.T) {
 	for i := 0; i < bucketSize-2; i++ {
 		s[0] -= 1
 		contact = NewContact(NewKademliaID(hex.EncodeToString(s)), "localhost:8000")
-		lBucket.AddContact(contact)
+		lBucket.AddContact(contact, pingTest)
 	}
 
 	var l = lBucket.Len()
@@ -60,16 +74,19 @@ func TestAddContact(t *testing.T) {
 		t.Fatalf("The bucket is not full! It only contains %d elements.", l)
 	}
 
-	lBucket.AddContact(NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "localhost:8000"))
-	checkFirstElement(t, contact, lBucket)
+	// check that element is removed from bucket if timeout happens
+	contact2 := NewContact(NewKademliaID("11FFFFFF00000000000000000000000000000000"), "localhost:8000")
+	lBucket.AddContact(contact2, pingTestTimeout)
+
+	checkFirstElement(t, contact2, lBucket)
 }
 
 func TestGetContactAndCalcDistance(t *testing.T) {
 	var lBucket = newBucket()
 
-	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
-	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
-	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
+	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
+	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
 
 	var contacts = lBucket.GetContactAndCalcDistance(NewKademliaID("FFFFFFFF00000000000000000000000000000000"))
 
@@ -84,9 +101,9 @@ func TestGetContactAndCalcDistance(t *testing.T) {
 func TestLen(t *testing.T) {
 	var lBucket = newBucket()
 
-	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
-	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
-	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	lBucket.AddContact(NewContact(NewKademliaID("1FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
+	lBucket.AddContact(NewContact(NewKademliaID("2FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
+	lBucket.AddContact(NewContact(NewKademliaID("3FFFFFFF00000000000000000000000000000000"), "localhost:8000"), pingTest)
 
 	bucketLen := lBucket.Len()
 

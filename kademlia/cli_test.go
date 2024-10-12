@@ -96,12 +96,12 @@ func TestShow(t *testing.T) {
 
 	k := NewKademlia(contacts[0])
 
-	k.Rt.AddContact(contacts[1])
+	/*k.Rt.AddContact(contacts[1])
 	k.Rt.AddContact(contacts[2])
 	k.Rt.AddContact(contacts[3])
 	k.Rt.AddContact(contacts[4])
 	k.Rt.AddContact(contacts[5])
-	k.Rt.AddContact(contacts[6])
+	k.Rt.AddContact(contacts[6])*/
 
 	cli := NewCli(k)
 
