@@ -90,7 +90,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 				sender.CalcDistance(kademlia.Rt.me.ID) // calc distance to self
 				fmt.Println("SENDER ID:", sender.ID, "\nME ID:", kademlia.Rt.me.ID, "\nDISTANCE:", sender.distance, "\nDISTANCE ADDRESS", &sender.distance)
 				fmt.Println("CURRENT SENDER:", sender)
-				go kademlia.Network.AddContact(sender)
+				kademlia.Rt.AddContact(sender, kademlia.Network.SendPingMessage)
 				log.Printf("  %s\n", foundContact.ID.String())
 			}
 
@@ -112,13 +112,18 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
-	log.Println("Joining network")
-	response := make(chan Message)
-	go kademlia.Network.SendPingMessage(&Contact{Address: kademlia.Network.BootstrapIP}, response) // ping bootstrap node so that it is added to routing table
-	r := <-response
-	log.Println(r.MsgType)                     // wait for response
-	kademlia.LookupContact(*kademlia.Rt.me.ID) // lookup on this node to add close nodes to routing table
+	for {
+		log.Println("Joining network")
+		response := make(chan Message)
+		go kademlia.Network.SendPingMessage(&Contact{Address: kademlia.Network.BootstrapIP}, response) // ping bootstrap node so that it is added to routing table
+		r := <-response
+		log.Println(r.MsgType) // wait for response
+		if r.MsgType == "PONG" {
+			break
+		}
+	}
 
+	kademlia.LookupContact(*kademlia.Rt.me.ID) // lookup on this node to add close nodes to routing table
 	rtInfo := "Routing table:\n"
 	currRt := kademlia.Network.Rt.buckets
 
@@ -193,7 +198,7 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 			for _, foundContact := range message.Contacts {
 				sender := foundContact
 				sender.CalcDistance(kademlia.Rt.me.ID) // calc distance to self
-				go kademlia.Network.AddContact(sender)
+				go kademlia.Rt.AddContact(sender, kademlia.Network.SendPingMessage)
 			}
 
 			// For each contact that was received from the message

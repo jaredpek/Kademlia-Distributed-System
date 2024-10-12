@@ -1,6 +1,9 @@
 package kademlia
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 const bucketSize = 4
 
@@ -23,10 +26,18 @@ func NewRoutingTable(me Contact) *RoutingTable {
 }
 
 // AddContact add a new contact to the correct Bucket
-func (routingTable *RoutingTable) AddContact(contact Contact) {
-	bucketIndex := routingTable.getBucketIndex(contact.ID)
-	bucket := routingTable.buckets[bucketIndex]
-	bucket.AddContact(contact)
+func (routingTable *RoutingTable) AddContact(contact Contact, ping func(*Contact, chan Message)) {
+	routingTable.lock.Lock()
+	if *contact.ID == *routingTable.me.ID {
+		log.Println("[ADD CONTACT] id is itselft")
+		routingTable.lock.Unlock()
+		return
+	} else {
+		bucketIndex := routingTable.getBucketIndex(contact.ID)
+		bucket := routingTable.buckets[bucketIndex]
+		bucket.AddContact(contact, ping)
+		routingTable.lock.Unlock()
+	}
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const timeout = 10 * time.Second
+const timeout = 5 * time.Second
 
 // interfaces and structs for Messenger
 type Messenger interface {
@@ -97,35 +97,6 @@ func (m *MockMessenger) GetLatestMessage() (Message, error) {
 	return mes, nil
 }
 
-func (network *Network) AddContact(contact Contact) {
-	bucketIndex := network.Rt.getBucketIndex(contact.ID)
-	correctBucket := network.Rt.buckets[bucketIndex]
-	if correctBucket.Len() == bucketSize { // if bucket is full
-		network.Rt.lock.Lock()
-		oldestElement := correctBucket.list.Back()
-		oldestContact := oldestElement.Value.(Contact) // get oldest contact
-		network.Rt.lock.Unlock()
-
-		responseChan := make(chan Message)
-		log.Println("Network add contact ping.")
-		go network.SendPingMessage(&oldestContact, responseChan) // ping oldest contact
-		response := <-responseChan
-		if response.MsgType == "TIMEOUT" { // if oldest timed out
-			network.Rt.lock.Lock()
-			network.Rt.AddContact(contact) // add new contact
-			network.Rt.lock.Unlock()
-		} else {
-			network.Rt.lock.Lock()
-			correctBucket.list.MoveToFront(oldestElement) // else move oldest to front
-			network.Rt.lock.Unlock()
-		}
-	} else { // if bucket is not full
-		network.Rt.lock.Lock()
-		network.Rt.AddContact(contact)
-		network.Rt.lock.Unlock()
-	}
-}
-
 func (network *Network) Listen() {
 	ListenAddr, err := net.ResolveUDPAddr("udp", ":"+network.ListenPort)
 	if err != nil {
@@ -138,10 +109,6 @@ func (network *Network) Listen() {
 		log.Fatal(err) // TODO: unsure how to handle the errors should i return them or log.Fatal(err)
 	}
 	defer conn.Close() // close connection when listening is done
-
-	//spawn a message handler
-	messages := make(chan Message, 50) // large buffer because of network startup, might receive 50 at once
-	go network.MessageHandler(messages)
 
 	// read messages in a loop
 	for {
@@ -161,36 +128,33 @@ func (network *Network) Listen() {
 
 		log.Println("received message: ", decoded_message) // for debugging
 
-		messages <- decoded_message //give received message to the handler
+		go network.MessageHandler(decoded_message) //give received message to the handler
 	}
 }
 
 // TODO: add testing
-func (network *Network) MessageHandler(messages chan Message) {
-	for {
-		// TODO: perform appropriate routing table operations
+func (network *Network) MessageHandler(received_message Message) {
 
-		received_message := <-messages
+	// TODO: perform appropriate routing table operations
+	log.Println("Entered message handler")
 
-		//add the sender to routing table
-		sender := received_message.Sender
-		sender.CalcDistance(network.Rt.me.ID) // calc distance to self
-		go network.AddContact(sender)
-
-		switch received_message.MsgType {
-		case "PING":
-			go network.SendPongMessage(received_message)
-		case "FIND_CONTACT":
-			go network.SendFindContactResponse(received_message)
-		case "FIND_DATA":
-			go network.SendFindDataResponse(received_message)
-		case "STORE":
-			fmt.Println("GOT STORE MESSAGE")
-			go network.SendStoreResponse(received_message)
-		case "PONG", "FIND_CONTACT_RESPONSE", "FIND_DATA_RESPONSE", "STORE_RESPONSE":
-			go network.handleResponse(received_message)
-		}
+	log.Println("got to switch case message handler")
+	switch received_message.MsgType {
+	case "PING":
+		go network.SendPongMessage(received_message)
+	case "FIND_CONTACT":
+		go network.SendFindContactResponse(received_message)
+	case "FIND_DATA":
+		go network.SendFindDataResponse(received_message)
+	case "STORE":
+		fmt.Println("GOT STORE MESSAGE")
+		go network.SendStoreResponse(received_message)
+	case "PONG", "FIND_CONTACT_RESPONSE", "FIND_DATA_RESPONSE", "STORE_RESPONSE":
+		go network.handleResponse(received_message)
 	}
+	sender := received_message.Sender
+	sender.CalcDistance(network.Rt.me.ID) // calc distance to self
+	network.Rt.AddContact(sender, network.SendPingMessage)
 }
 
 func (network *Network) handleResponse(response Message) {
@@ -219,6 +183,13 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 	case read := <-response: // got a response
 		return read
 	case <-time.After(timeout): // no response
+		network.lock.Lock() // remove the expected response
+		chn := network.ExpectedResponses[message.RPCID]
+		if chn != nil {
+			close(chn)
+			delete(network.ExpectedResponses, message.RPCID)
+		}
+		network.lock.Unlock()
 		log.Println("Time out while waiting for message: ", message.RPCID)
 		return Message{MsgType: "TIMEOUT", RPCID: message.RPCID}
 	}
