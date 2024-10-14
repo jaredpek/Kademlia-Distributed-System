@@ -65,7 +65,7 @@ func TestProcessInput(t *testing.T) {
 
 	errStr2 := err2.Error()
 
-	if errStr != errStr2 || errStr != "CLI Error: Invalid get show. There should be no characters after the 'show' or 'exit' command" {
+	if errStr != errStr2 || errStr != "CLI Error: Invalid 'show' or 'exit' command. There should be no characters after the 'show' or 'exit' command" {
 		t.Fatalf("No error returned for 'show' or 'exit' when extra data was provided!")
 	}
 

@@ -12,7 +12,7 @@ const Alpha = 3
 // Default network values
 const BootstrapIP = "172.26.0.2:1234"
 const ListenPort = "1234"
-const PacketSize = 1024
+const PacketSize = 1024 * 4
 
 type Kademlia struct {
 	Network *Network
@@ -56,7 +56,7 @@ func (kademlia *Kademlia) updateContacts(
 			break
 		}
 
-		// Send node lookup request to the node async
+		// Send lookup request to the node async
 		go findFunc(target, &closestContact, responses)
 
 		// Update contact record status

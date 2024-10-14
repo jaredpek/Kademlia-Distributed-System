@@ -80,8 +80,6 @@ func (cli *cli) processInput(input string) error {
 func (cli *cli) HandleInput(command, input string) error {
 	err := fmt.Errorf("CLI Error: Disallowed input")
 
-	fmt.Println("Command:", command, "\nInput:", input)
-
 	if input != "" {
 		switch command {
 		case "put":

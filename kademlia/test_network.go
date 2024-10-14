@@ -49,7 +49,7 @@ func TestJoin(ip string) {
 	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), ip))
 	n := Network{
 		ListenPort:        "1234",
-		PacketSize:        1024,
+		PacketSize:        1024 * 4,
 		ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		Rt:                rt,
 		BootstrapIP:       "172.26.0.2:1234",
@@ -104,7 +104,7 @@ func TestListen() { //TODO: add assertions
 	rt := NewRoutingTable(NewContact(NewRandomKademliaID(), "127.0.0.1"))
 	n := Network{
 		ListenPort:        "1234",
-		PacketSize:        1024,
+		PacketSize:        1024 * 4,
 		ExpectedResponses: make(map[KademliaID]chan Message, 10),
 		Rt:                rt,
 		Messenger:         &UDPMessenger{Rt: rt},

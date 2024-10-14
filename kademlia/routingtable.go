@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-const bucketSize = 4
+const bucketSize = 20
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
@@ -29,7 +29,7 @@ func NewRoutingTable(me Contact) *RoutingTable {
 func (routingTable *RoutingTable) AddContact(contact Contact, ping func(*Contact, chan Message)) {
 	routingTable.lock.Lock()
 	if *contact.ID == *routingTable.me.ID {
-		log.Println("[ADD CONTACT] id is itselft")
+		log.Println("[ADD CONTACT] id is itself")
 		routingTable.lock.Unlock()
 		return
 	} else {

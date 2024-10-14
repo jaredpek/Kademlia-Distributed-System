@@ -115,13 +115,13 @@ func (network *Network) Listen() {
 		buf := make([]byte, network.PacketSize)
 		n, addr, err := conn.ReadFromUDP(buf[0:]) // place read message in buf
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("ERROR 1:", err)
 		}
 
 		dec := gob.NewDecoder(bytes.NewBuffer(buf[:n])) // give message as input to decoder
 		var decoded_message Message
 		if err := dec.Decode(&decoded_message); err != nil { //place the decoded message in decoded_message
-			log.Fatal(err)
+			log.Fatal("ERROR 2:", err)
 		}
 
 		decoded_message.Sender.Address = addr.IP.String() + ":" + network.ListenPort // ensure the sender has the correct IP
