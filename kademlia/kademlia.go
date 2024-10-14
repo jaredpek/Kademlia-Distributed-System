@@ -19,6 +19,7 @@ type Kademlia struct {
 	Rt      *RoutingTable
 }
 
+// Creates a new instance of the Kademlia
 func NewKademlia(me Contact) *Kademlia {
 	Rt := NewRoutingTable(me)
 	return &Kademlia{
@@ -34,6 +35,37 @@ func NewKademlia(me Contact) *Kademlia {
 	}
 }
 
+// Local function used to update what contacts have been contacted
+func (kademlia *Kademlia) updateContacts(
+	contacted *map[string]bool,
+	closest *ContactCandidates,
+	contacts *[]Contact,
+	responses chan Message,
+	target KademliaID,
+	findFunc func(KademliaID, *Contact, chan Message),
+) {
+	// For each contact of the k-closest
+	for _, closestContact := range closest.GetContacts(bucketSize) {
+		// Continue to the next contact if already contacted
+		if (*contacted)[closestContact.Address] {
+			continue
+		}
+
+		// Stop sending find contact requests if reached alpha nodoes
+		if len(*contacts) >= Alpha {
+			break
+		}
+
+		// Send node lookup request to the node async
+		go findFunc(target, &closestContact, responses)
+
+		// Update contact record status
+		(*contacted)[closestContact.Address] = true
+		*contacts = append(*contacts, closestContact)
+	}
+}
+
+// Implements NodeLookup in Kademlia. Finds the k closest nodes to an KademlaiID.
 func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 	log.Println("[FIND_CONTACT] Performing lookup contact")
 	var closest ContactCandidates
@@ -59,7 +91,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		closest.Sort()
 
 		// For each contact of the k-closest
-		for _, closestContact := range closest.GetContacts(bucketSize) {
+		/*for _, closestContact := range closest.GetContacts(bucketSize) {
 			// Continue to the next contact if already contacted
 			if contacted[closestContact.Address] {
 				continue
@@ -76,7 +108,8 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 			// Update contact record status
 			contacted[closestContact.Address] = true
 			contacts = append(contacts, closestContact)
-		}
+		}*/
+		kademlia.updateContacts(&contacted, &closest, &contacts, responses, target, kademlia.Network.SendFindContactMessage)
 
 		// For each contact that was sent a find contact message
 		for i := 0; i < len(contacts); i++ {
@@ -111,6 +144,7 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 	}
 }
 
+// Used when a node joins a kademlia network.
 func (kademlia *Kademlia) JoinNetwork() {
 	for {
 		log.Println("Joining network")
@@ -167,7 +201,7 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 		closest.Sort()
 
 		// For each contact of the k-closest
-		for _, closestContact := range closest.GetContacts(bucketSize) {
+		/*for _, closestContact := range closest.GetContacts(bucketSize) {
 			// Continue to the next contact if already contacted
 			if contacted[closestContact.Address] {
 				continue
@@ -184,7 +218,8 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 			// Update contact record status
 			contacted[closestContact.Address] = true
 			contacts = append(contacts, closestContact)
-		}
+		}*/
+		kademlia.updateContacts(&contacted, &closest, &contacts, responses, *id, kademlia.Network.SendFindDataMessage)
 
 		// For each contact that was sent a find contact message
 		for i := 0; i < len(contacts); i++ {

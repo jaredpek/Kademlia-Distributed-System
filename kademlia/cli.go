@@ -66,7 +66,7 @@ func (cli *cli) processInput(input string) error {
 		if len(parts) == 1 {
 			input = ""
 		} else {
-			return fmt.Errorf("CLI Error: Invalid get show. There should be no characters after the 'show' or 'exit' command")
+			return fmt.Errorf("CLI Error: Invalid 'show' or 'exit' command. There should be no characters after the 'show' or 'exit' command")
 		}
 	} else {
 		return fmt.Errorf("CLI Error: Invalid command. Must start with 'put', 'get', 'show' or 'exit'")

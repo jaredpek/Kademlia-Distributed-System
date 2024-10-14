@@ -28,3 +28,17 @@ func TestLookupContact(t *testing.T) {
 		t.Error("[FAIL] Incorrect closest contacts returned")
 	}*/
 }
+
+func TestUpdateContact(t *testing.T) {
+	var target KademliaID
+	var closest ContactCandidates
+	var contacted map[string]bool = map[string]bool{}
+	var contacts []Contact
+	responses := make(chan Message, 5)
+
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+
+	var k Kademlia = *NewKademlia(me)
+
+	k.updateContacts(&contacted, &closest, &contacts, responses, target, k.Network.SendFindContactMessage)
+}
