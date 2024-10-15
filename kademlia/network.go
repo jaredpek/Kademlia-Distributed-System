@@ -81,6 +81,7 @@ func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 		time.Sleep(10 * time.Millisecond)
 		_, err = conn.Write(buf.Bytes())
 	}
+	log.Println("WRITE SUCCESS:", err)
 }
 
 // Mock version of send message. Used for testing
