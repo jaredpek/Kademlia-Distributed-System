@@ -58,24 +58,28 @@ func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 	// set up the connection
 	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("SETUP ERROR:", err)
 	}
 
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("DAIL ERROR:", err)
 	}
 
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf) // encoded bytes go to buf
 
 	if err := enc.Encode(msg); err != nil { // encode
-		log.Fatal(err)
+		log.Fatal("ENCODE ERROR:", err)
 	}
 
 	_, err = conn.Write(buf.Bytes()) // send encoded message
-	if err != nil {
-		log.Fatal(err)
+	for err != nil {
+		log.Println("WRITE ERROR:", err)
+		// a write error occured, this can happen in networks with a lot of activity
+		// wait 10 milliseconds and try again
+		time.Sleep(10 * time.Millisecond)
+		_, err = conn.Write(buf.Bytes())
 	}
 }
 
