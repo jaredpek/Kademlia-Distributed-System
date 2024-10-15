@@ -51,9 +51,7 @@ type Message struct {
 func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 	log.Println("Sending message: ", msg)
 	// make sure the sender field is always this node
-	// network.lock.Lock()
 	msg.Sender = m.Rt.me
-	// network.lock.Unlock()
 
 	// set up the connection
 	udpAddr, err := net.ResolveUDPAddr("udp", contact.Address)
@@ -78,7 +76,7 @@ func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 		log.Println("WRITE ERROR:", err)
 		// a write error occured, this can happen in networks with a lot of activity
 		// wait 10 milliseconds and try again
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		_, err = conn.Write(buf.Bytes())
 	}
 	log.Println("WRITE SUCCESS:", err)

@@ -94,24 +94,6 @@ func (kademlia *Kademlia) LookupContact(target KademliaID) []Contact {
 		closest.Sort()
 
 		// For each contact of the k-closest
-		/*for _, closestContact := range closest.GetContacts(bucketSize) {
-			// Continue to the next contact if already contacted
-			if contacted[closestContact.Address] {
-				continue
-			}
-
-			// Stop sending find contact requests if reached alpha nodoes
-			if len(contacts) >= Alpha {
-				break
-			}
-
-			// Send node lookup request to the node async
-			go kademlia.Network.SendFindContactMessage(target, &closestContact, responses)
-
-			// Update contact record status
-			contacted[closestContact.Address] = true
-			contacts = append(contacts, closestContact)
-		}*/
 		kademlia.updateContacts(&contacted, &closest, &contacts, responses, target, kademlia.Network.SendFindContactMessage)
 
 		// For each contact that was sent a find contact message
@@ -204,24 +186,6 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 		closest.Sort()
 
 		// For each contact of the k-closest
-		/*for _, closestContact := range closest.GetContacts(bucketSize) {
-			// Continue to the next contact if already contacted
-			if contacted[closestContact.Address] {
-				continue
-			}
-
-			// Stop sending find contact requests if reached alpha nodoes
-			if len(contacts) >= Alpha {
-				break
-			}
-
-			// Send lookup data request to the node async
-			go kademlia.Network.SendFindDataMessage(*id, &closestContact, responses)
-
-			// Update contact record status
-			contacted[closestContact.Address] = true
-			contacts = append(contacts, closestContact)
-		}*/
 		kademlia.updateContacts(&contacted, &closest, &contacts, responses, *id, kademlia.Network.SendFindDataMessage)
 
 		// For each contact that was sent a find contact message

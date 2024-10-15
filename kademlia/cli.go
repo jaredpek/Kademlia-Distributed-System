@@ -92,7 +92,7 @@ func (cli *cli) HandleInput(command, input string) error {
 	} else {
 		switch command {
 		case "show":
-			cli.Show()
+			fmt.Println(cli.Show())
 		case "exit":
 			cli.Exit()
 		default:
@@ -121,7 +121,7 @@ func (cli *cli) Get(hash string) {
 }
 
 // Shows the nodes routing table
-func (cli *cli) Show() {
+func (cli *cli) Show() string {
 	rtInfo := "Routing table:\n"
 
 	currRt := cli.Kademlia.Rt.buckets
@@ -133,7 +133,7 @@ func (cli *cli) Show() {
 		}
 	}
 
-	fmt.Println(rtInfo)
+	return rtInfo
 }
 
 // Terminates the node

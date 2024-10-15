@@ -31,7 +31,15 @@ func TestLookupContact(t *testing.T) {
 }
 
 func TestNewKademlia(t *testing.T) {
+	lKademlia := NewKademlia(Contact{})
+	var lKademliaType interface{} = lKademlia
 
+	// test if func return a Kademlia
+	_, ok := lKademliaType.(*Kademlia)
+
+	if !ok {
+		t.Fatalf("NewKademlia() does not return Kademlia of type 'Kademlia'")
+	}
 }
 
 func TestUpdateContact(t *testing.T) {

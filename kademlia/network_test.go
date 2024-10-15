@@ -154,7 +154,7 @@ func TestSendFindContactResponse(t *testing.T) {
 
 	key := NewKademliaID("FFF1111100000000000000000000000000000000")
 
-	closest := rt.FindClosestContacts(key, bucketSize)
+	closest := rt.FindClosestContacts(key, 4)
 
 	id := *NewRandomKademliaID()
 
@@ -168,7 +168,8 @@ func TestSendFindContactResponse(t *testing.T) {
 
 	res, _ := n.Messenger.(*MockMessenger).GetLatestMessage()
 
-	for i := 0; i < bucketSize; i++ {
+	// it is assumed that bucketsize is 4
+	for i := 0; i < 4; i++ {
 		if res.Contacts[i].ID != closest[i].ID {
 			t.Fatalf("The Contacts returned from 'SendFindContactResponse' are incorrect! \n%s != %s", res.Contacts[i].String(), closest[i].String())
 		}
@@ -438,5 +439,37 @@ func TestSendFindDataMessage(t *testing.T) {
 
 	if !(sentRes.Sender.ID.String() == other.ID.String() && sentRes.MsgType == "SendFindDataResponse") {
 		t.Fatalf("The 'SendFindDataMessage' does not read the response from array!")
+	}
+}
+
+func TestMessageHandler(t *testing.T) {
+	// environment for test, set locally so tests don't affect eachother
+	/*-----------------------------------------------------------------------------------------------*/
+	var me = NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "127.0.0.1:1234")
+	var rt = NewRoutingTable(me)
+	var n = Network{
+		ListenPort:        "1234",
+		PacketSize:        1024,
+		ExpectedResponses: make(map[KademliaID]chan Message, 10),
+		Rt:                rt,
+		Messenger:         &MockMessenger{Rt: rt},
+	}
+	/*-----------------------------------------------------------------------------------------------*/
+	id := NewRandomKademliaID()
+
+	m := Message{
+		MsgType: "PING",
+		Sender:  me,
+		RPCID:   *id,
+	}
+
+	n.MessageHandler(m)
+	latestMes, err := n.Messenger.(*MockMessenger).GetLatestMessage()
+	if err != nil {
+		t.Fatalf("Error in MessageHandler test for PING: %s", err.Error())
+	}
+
+	if latestMes.MsgType != "PONG" {
+		t.Fatalf("MessageHandler does not respond with PONG message when PING message has been recieved!")
 	}
 }

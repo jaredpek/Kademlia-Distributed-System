@@ -18,6 +18,9 @@ func GetContact(detail Detail) Contact {
 }
 
 func TestRoutingTable(t *testing.T) {
+	// for this test bucketSize is 4
+	var bucketSize = 4
+
 	var pingTest = func(_ *Contact, out chan Message) {
 		m := Message{
 			MsgType: "PONG",
@@ -41,7 +44,7 @@ func TestRoutingTable(t *testing.T) {
 	}
 
 	// Add dummy contacts that should not be added to table
-	contacts = append(contacts, contacts...)
+	//contacts = append(contacts, contacts...)
 
 	// Test routing table creation
 	table := NewRoutingTable(contacts[0])
@@ -57,10 +60,10 @@ func TestRoutingTable(t *testing.T) {
 
 	// Test routing table closest contacts search that should be in order of [closest -> ... -> furthest]
 	closest := table.FindClosestContacts(contacts[5].ID, bucketSize)
-	if closest[0].ID != contacts[4].ID ||
-		closest[1].ID != contacts[1].ID ||
-		closest[2].ID != contacts[2].ID ||
-		closest[3].ID != contacts[3].ID {
+	if closest[0].ID != contacts[5].ID ||
+		closest[1].ID != contacts[4].ID ||
+		closest[2].ID != contacts[1].ID ||
+		closest[3].ID != contacts[2].ID {
 		t.Error("[FAIL] Incorrect closest contacts found")
 	}
 }

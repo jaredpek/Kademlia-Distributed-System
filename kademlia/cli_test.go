@@ -1,8 +1,22 @@
 package kademlia
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
+
+func TestNewCli(t *testing.T) {
+	lCli := NewCli(&Kademlia{})
+	var lCliType interface{} = lCli
+
+	// test if func return a cli
+	_, ok := lCliType.(*cli)
+
+	if !ok {
+		t.Fatalf("NewCli() does not return cli of type 'Cli'")
+	}
+}
 
 func TestHandleInput(t *testing.T) {
 	cli := NewCli(&Kademlia{})
@@ -79,9 +93,15 @@ func TestProcessInput(t *testing.T) {
 }
 
 func TestShow(t *testing.T) {
+	var pingTest = func(_ *Contact, out chan Message) {
+		m := Message{
+			MsgType: "PONG",
+		}
+		out <- m
+	}
+
 	var details []Detail = []Detail{
 		GetContactDetails("0000000000000000000000000000000000000001", "localhost:8000"),
-		GetContactDetails("0000000000000000000000000000000000000002", "localhost:8000"),
 		GetContactDetails("1111111100000000000000000000000000000000", "localhost:8000"),
 		GetContactDetails("1111111200000000000000000000000000000000", "localhost:8000"),
 		GetContactDetails("1111111300000000000000000000000000000000", "localhost:8000"),
@@ -96,17 +116,23 @@ func TestShow(t *testing.T) {
 
 	k := NewKademlia(contacts[0])
 
-	/*k.Rt.AddContact(contacts[1])
-	k.Rt.AddContact(contacts[2])
-	k.Rt.AddContact(contacts[3])
-	k.Rt.AddContact(contacts[4])
-	k.Rt.AddContact(contacts[5])
-	k.Rt.AddContact(contacts[6])*/
+	k.Rt.AddContact(contacts[1], pingTest)
+	k.Rt.AddContact(contacts[2], pingTest)
+	k.Rt.AddContact(contacts[3], pingTest)
+	k.Rt.AddContact(contacts[4], pingTest)
+	k.Rt.AddContact(contacts[5], pingTest)
 
 	cli := NewCli(k)
 
-	cli.Show()
-	// need to add assertion
+	fmt.Println(cli.Show())
+
+	var expectedStrings = []string{"Content in bucket 0\n  ffffffffffffffffffffffffffffffffffffffff\n  ff11111300000000000000000000000000000000", "Content in bucket 3\n  1111111300000000000000000000000000000000\n  1111111200000000000000000000000000000000\n  1111111100000000000000000000000000000000"}
+
+	for _, s := range expectedStrings {
+		if !strings.Contains(cli.Show(), s) {
+			t.Fatalf("Error in Show! The returned string does not containe the expected values.")
+		}
+	}
 }
 
 func TestPut(t *testing.T) {
