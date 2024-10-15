@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 )
+
+const tRepublish = 1 * time.Minute
 
 const Alpha = 3
 
@@ -275,6 +278,11 @@ func (kademlia *Kademlia) Store(data []byte) (error, string) {
 	for _, n := range closestNodes {
 		kademlia.Network.SendStoreMessage(dataID, data, &n)
 	}
+
+	go func() { // republish the data
+		time.Sleep(tRepublish)
+		kademlia.Store(data)
+	}()
 
 	return nil, dataID.String()
 }

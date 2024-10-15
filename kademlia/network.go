@@ -47,7 +47,7 @@ type Message struct {
 	Contacts []Contact
 }
 
-// send generic message
+// send generic message over UDP
 func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 	log.Println("Sending message: ", msg)
 	// make sure the sender field is always this node
@@ -102,6 +102,7 @@ func (m *MockMessenger) GetLatestMessage() (Message, error) {
 	return mes, nil
 }
 
+// Keep listening in a loop and handle received messages.
 func (network *Network) Listen() {
 	ListenAddr, err := net.ResolveUDPAddr("udp", ":"+network.ListenPort)
 	if err != nil {
@@ -137,13 +138,8 @@ func (network *Network) Listen() {
 	}
 }
 
-// TODO: add testing
+// handles received messages based on the message type and tries adding the sender to the routing table
 func (network *Network) MessageHandler(received_message Message) {
-
-	// TODO: perform appropriate routing table operations
-	log.Println("Entered message handler")
-
-	log.Println("got to switch case message handler")
 	switch received_message.MsgType {
 	case "PING":
 		go network.SendPongMessage(received_message)
@@ -158,10 +154,11 @@ func (network *Network) MessageHandler(received_message Message) {
 		go network.handleResponse(received_message)
 	}
 	sender := received_message.Sender
-	sender.CalcDistance(network.Rt.me.ID) // calc distance to self
+	sender.CalcDistance(network.Rt.me.ID)
 	network.Rt.AddContact(sender, network.SendPingMessage)
 }
 
+// Give a response message to a waiting sender
 func (network *Network) handleResponse(response Message) {
 	network.lock.Lock()
 	chn := network.ExpectedResponses[response.RPCID] // grab the channel of the waiting sender
@@ -173,7 +170,7 @@ func (network *Network) handleResponse(response Message) {
 	network.lock.Unlock()
 }
 
-// Send message to contact and await a response. Time out after 10 seconds
+// Send message to contact and await a response. Times out if nothing is received.
 func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) Message {
 	response := make(chan Message) // channel for receiving a response to the sent message
 
@@ -182,7 +179,6 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 	network.lock.Unlock()
 
 	network.Messenger.SendMessage(contact, message)
-	fmt.Println(network.ExpectedResponses[message.RPCID])
 
 	select {
 	case read := <-response: // got a response
@@ -200,9 +196,7 @@ func (network *Network) SendAndAwaitResponse(contact *Contact, message Message) 
 	}
 }
 
-// Send ping message to contact and wait for a response
-// TODO: add timeout
-// TODO: add testing
+// Send ping message to contact and wait for a response that is given in out.
 func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
 	// make the message
 	ID := *NewRandomKademliaID()
@@ -215,7 +209,7 @@ func (network *Network) SendPingMessage(contact *Contact, out chan Message) {
 	out <- response                                      // return the response through the out channel
 }
 
-// send pong response to the subject message
+// Send pong response to the subject message.
 func (network *Network) SendPongMessage(subject Message) {
 	m := Message{
 		MsgType: "PONG",
@@ -224,7 +218,7 @@ func (network *Network) SendPongMessage(subject Message) {
 	network.Messenger.SendMessage(&subject.Sender, m)
 }
 
-// ask contact about id, receive response in out channel
+// Ask contact about id, receive response in out channel.
 func (network *Network) SendFindContactMessage(id KademliaID, contact *Contact, out chan Message) {
 	// create the message
 	ID := *NewRandomKademliaID()
@@ -238,6 +232,7 @@ func (network *Network) SendFindContactMessage(id KademliaID, contact *Contact, 
 	out <- response                                      // return the response through the out channel
 }
 
+// Send a find contact response to the subject message.
 func (network *Network) SendFindContactResponse(subject Message) {
 	closest := network.Rt.FindClosestContacts(&subject.Key, bucketSize)
 
@@ -249,6 +244,7 @@ func (network *Network) SendFindContactResponse(subject Message) {
 	network.Messenger.SendMessage(&subject.Sender, m)
 }
 
+// Ask contact if they have the data associated with hash, put response in out.
 func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, out chan Message) {
 	ID := *NewRandomKademliaID()
 	m := Message{
@@ -261,6 +257,7 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 	out <- response                                      // return the response through the out channel
 }
 
+// Send a find data response to the subject message.
 func (network *Network) SendFindDataResponse(subject Message) {
 	m := Message{
 		MsgType: "FIND_DATA_RESPONSE",
@@ -291,6 +288,7 @@ func (network *Network) FindData(key string) (string, error) {
 	return string(res), nil
 }
 
+// Send a message to contact that they should store data with the key key.
 func (network *Network) SendStoreMessage(key KademliaID, data []byte, contact *Contact /*, out chan Message*/) {
 	ID := *NewRandomKademliaID()
 	m := Message{
