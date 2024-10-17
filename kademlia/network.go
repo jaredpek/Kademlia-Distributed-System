@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
@@ -49,7 +48,7 @@ type Message struct {
 
 // send generic message over UDP
 func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
-	log.Println("Sending message: ", msg)
+	log.Println("Sending message: ", msg.MsgType)
 	// make sure the sender field is always this node
 	msg.Sender = m.Rt.me
 
@@ -79,7 +78,6 @@ func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 		time.Sleep(50 * time.Millisecond)
 		_, err = conn.Write(buf.Bytes())
 	}
-	log.Println("WRITE SUCCESS:", err)
 }
 
 // Mock version of send message. Used for testing
@@ -130,7 +128,7 @@ func (network *Network) Listen() {
 
 		decoded_message.Sender.Address = addr.IP.String() + ":" + network.ListenPort // ensure the sender has the correct IP
 
-		log.Println("received message: ", decoded_message) // for debugging
+		log.Println("received message: ", decoded_message.MsgType) // for debugging
 
 		go network.MessageHandler(decoded_message) //give received message to the handler
 	}
@@ -297,15 +295,6 @@ func (network *Network) SendStoreMessage(key KademliaID, data []byte, contact *C
 		Key:     key,
 		Body:    string(data),
 	}
-
-	fmt.Println("Value in body:", hex.EncodeToString(data))
-
-	// since Store does not return a message should not be needed
-	/*response, err := network.SendAndAwaitResponse(contact, m) // send message, get a response or a timeout
-	if err != nil {                                           // there is a timeout, no response
-		return
-	}
-	out <- response // return the response through the out channel*/
 
 	network.Messenger.SendMessage(contact, m)
 }
