@@ -10,6 +10,18 @@ import (
 	"os"
 )
 
+var thisIP string = GetLocalIP().String()
+var rt *kademlia.RoutingTable = kademlia.NewRoutingTable(kademlia.NewContact(kademlia.NewRandomKademliaID(), thisIP))
+var network kademlia.Network = kademlia.Network{
+	ListenPort:        "1234",
+	PacketSize:        1024 * 4,
+	ExpectedResponses: make(map[kademlia.KademliaID]chan kademlia.Message, 10),
+	Rt:                rt,
+	BootstrapIP:       "172.26.0.2:1234",
+	Messenger:         &kademlia.UDPMessenger{Rt: rt},
+}
+var k kademlia.Kademlia = kademlia.Kademlia{&network, rt}
+
 func GetLocalIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
@@ -23,40 +35,19 @@ func GetLocalIP() net.IP {
 }
 
 func main() {
-	fmt.Println("Pretending to run the kademlia app...")
-	// Using stuff from the kademlia package here. Something like...
-	id := kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000")
-	contact := kademlia.NewContact(id, "localhost:8000")
-	fmt.Println(contact.String())
-	fmt.Printf("%v\n", contact)
-
-	fmt.Println(GetLocalIP().String())
+	fmt.Println("This nodes IP: " + GetLocalIP().String())
 
 	arg := os.Args[1]
 	if arg == "listen" {
 		fmt.Println("Listening...")
-		kademlia.TestListen()
-	} else if arg == "send" {
-		kademlia.TestSend()
-	} else if arg == "store" {
-		//kademlia.TestLocalStore(os.Args[2]
-		fmt.Println("User input:", os.Args[2])
-		kademlia.TestStore(os.Args[2], GetLocalIP().String())
-	} else if arg == "find" {
-		kademlia.TestFindData(kademlia.NewKademliaID(os.Args[2]))
-	} else if arg == "d" {
-		kademlia.TestDocker()
+		network.Listen()
 	} else if arg == "join" {
-		fmt.Println("GET HERE1")
-		kademlia.TestJoin(GetLocalIP().String())
-		fmt.Println("GET HERE2")
+		go k.JoinNetwork()
+		network.Listen()
 	} else if arg == "cli" {
-		ip := GetLocalIP().String()
-		c := kademlia.NewContact(kademlia.NewRandomKademliaID(), ip)
-		k := kademlia.NewKademlia(c)
-		var cli = kademlia.NewCli(k)
+		var cli = kademlia.NewCli(&k)
 
-		go k.Network.Listen()
+		go network.Listen()
 		go k.JoinNetwork()
 
 		for {
@@ -66,14 +57,5 @@ func main() {
 				fmt.Println(err.Error())
 			}
 		}
-	} /*else if arg == "rest" {
-		kademlia.TestRest()
-	}*/
-
-	/*else if arg == "ping" {
-		kademlia.TestSendPing(os.Args[2])
-	}*/
-
-	//kademlia.TestListen() //TODO: send and listen on one execution
-	//kademlia.TestSend()
+	}
 }
