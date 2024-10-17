@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"log"
 	"sync"
 )
 
@@ -29,7 +28,6 @@ func NewRoutingTable(me Contact) *RoutingTable {
 func (routingTable *RoutingTable) AddContact(contact Contact, ping func(*Contact, chan Message)) {
 	routingTable.lock.Lock()
 	if *contact.ID == *routingTable.me.ID {
-		log.Println("[ADD CONTACT] id is itself")
 		routingTable.lock.Unlock()
 		return
 	} else {
@@ -63,6 +61,40 @@ func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count 
 
 	if count > candidates.Len() {
 		count = candidates.Len()
+	}
+
+	return candidates.GetContacts(count)
+}
+
+// FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
+func (routingTable *RoutingTable) FindClosestContactsExclude(target *KademliaID, count int, exclude KademliaID) []Contact {
+	var candidates ContactCandidates
+	bucketIndex := routingTable.getBucketIndex(target)
+	bucket := routingTable.buckets[bucketIndex]
+
+	candidates.Append(bucket.GetContactAndCalcDistance(target))
+
+	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < IDLength*8) && candidates.Len() < count; i++ {
+		if bucketIndex-i >= 0 {
+			bucket = routingTable.buckets[bucketIndex-i]
+			candidates.Append(bucket.GetContactAndCalcDistance(target))
+		}
+		if bucketIndex+i < IDLength*8 {
+			bucket = routingTable.buckets[bucketIndex+i]
+			candidates.Append(bucket.GetContactAndCalcDistance(target))
+		}
+	}
+
+	candidates.Sort()
+
+	if count > candidates.Len() {
+		count = candidates.Len()
+	}
+
+	for i, e := range candidates.contacts {
+		if *e.ID == exclude {
+			candidates.contacts = append(candidates.contacts[:i], candidates.contacts[i+1:]...)
+		}
 	}
 
 	return candidates.GetContacts(count)
