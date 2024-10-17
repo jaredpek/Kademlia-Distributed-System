@@ -454,9 +454,18 @@ func TestMessageHandler(t *testing.T) {
 		Rt:                rt,
 		Messenger:         &MockMessenger{Rt: rt},
 	}
+	// other nodes
+	contacts := []Contact{
+		NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:8000"),
+		NewContact(NewKademliaID("1111111200000000000000000000000000000000"), "localhost:8000"),
+		NewContact(NewKademliaID("1111111300000000000000000000000000000000"), "localhost:8000"),
+		NewContact(NewKademliaID("1111111400000000000000000000000000000000"), "localhost:8000"),
+		NewContact(NewKademliaID("2111111400000000000000000000000000000000"), "localhost:8000"),
+	}
 	/*-----------------------------------------------------------------------------------------------*/
 	id := NewRandomKademliaID()
 
+	// test PING message
 	m := Message{
 		MsgType: "PING",
 		Sender:  me,
@@ -465,11 +474,50 @@ func TestMessageHandler(t *testing.T) {
 
 	n.MessageHandler(m)
 	latestMes, err := n.Messenger.(*MockMessenger).GetLatestMessage()
-	if err != nil {
-		t.Fatalf("Error in MessageHandler test for PING: %s", err.Error())
+	for err != nil {
+		latestMes, err = n.Messenger.(*MockMessenger).GetLatestMessage()
 	}
 
 	if latestMes.MsgType != "PONG" {
 		t.Fatalf("MessageHandler does not respond with PONG message when PING message has been recieved!")
+	}
+
+	// test FIND_CONTACT message
+	for _, c := range contacts {
+		rt.AddContact(c, pingTest)
+	}
+	m = Message{
+		MsgType: "FIND_CONTACT",
+		Sender:  me,
+		Key:     *NewRandomKademliaID(),
+		RPCID:   *NewRandomKademliaID(),
+	}
+
+	n.MessageHandler(m)
+	latestMes, err = n.Messenger.(*MockMessenger).GetLatestMessage()
+	for err != nil {
+		latestMes, err = n.Messenger.(*MockMessenger).GetLatestMessage()
+	}
+
+	if latestMes.MsgType != "FIND_CONTACT_RESPONSE" {
+		t.Fatalf("MessageHandler does not respond with FIND_CONTACT_RESPONSE message when FIND_CONTACT message has been recieved!")
+	}
+
+	// test PONG message
+	m = Message{
+		MsgType: "PONG",
+		Sender:  me,
+		RPCID:   *id,
+	}
+
+	responseCh := make(chan Message)
+	n.ExpectedResponses[*id] = responseCh
+
+	n.MessageHandler(m)
+
+	response := <-responseCh
+
+	if response.MsgType != "PONG" {
+		t.Fatalf("MessageHandler does not handle PONG message correctly!")
 	}
 }

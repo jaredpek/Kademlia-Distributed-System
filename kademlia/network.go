@@ -146,7 +146,6 @@ func (network *Network) MessageHandler(received_message Message) {
 	case "FIND_DATA":
 		go network.SendFindDataResponse(received_message)
 	case "STORE":
-		fmt.Println("GOT STORE MESSAGE")
 		go network.SendStoreResponse(received_message)
 	case "PONG", "FIND_CONTACT_RESPONSE", "FIND_DATA_RESPONSE", "STORE_RESPONSE":
 		go network.handleResponse(received_message)
