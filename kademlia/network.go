@@ -73,9 +73,9 @@ func (m *UDPMessenger) SendMessage(contact *Contact, msg Message) {
 
 	_, err = conn.Write(buf.Bytes()) // send encoded message
 	for err != nil {
-		log.Println("WRITE ERROR:", err)
+		// log.Println("WRITE ERROR:", err)
 		// a write error occured, this can happen in networks with a lot of activity
-		// wait 10 milliseconds and try again
+		// wait 50 milliseconds and try again
 		time.Sleep(50 * time.Millisecond)
 		_, err = conn.Write(buf.Bytes())
 	}
@@ -256,9 +256,12 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 
 // Send a find data response to the subject message.
 func (network *Network) SendFindDataResponse(subject Message) {
+	closest := network.Rt.FindClosestContacts(&subject.Key, bucketSize)
+
 	m := Message{
-		MsgType: "FIND_DATA_RESPONSE",
-		RPCID:   subject.RPCID,
+		MsgType:  "FIND_DATA_RESPONSE",
+		RPCID:    subject.RPCID,
+		Contacts: closest,
 	}
 
 	// find data

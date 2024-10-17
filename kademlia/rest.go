@@ -1,6 +1,6 @@
 package kademlia
 
-import (
+/*import (
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -71,5 +71,4 @@ func (r *Rest) CreateObject(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusCreated, data)
-}
-
+}*/

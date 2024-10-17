@@ -215,7 +215,7 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 
 		// If there are no k closest contacts that are uncontacted, return k closest contacts
 		if len(contacts) == 0 {
-			return "The requested file could not be downloaded"
+			return "The requested object could not be downloaded"
 		}
 	}
 }

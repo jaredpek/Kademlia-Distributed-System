@@ -49,7 +49,7 @@ func (cli *cli) processInput(input string) error {
 			if len(data) > 255 {
 				return fmt.Errorf("CLI Error: Invalid put command. Data longer than 255 characters")
 			}
-			fmt.Println("Put command with data:", data)
+			//fmt.Println("Put command with data:", data)
 		} else {
 			return fmt.Errorf("CLI Error: Invalid put command. No data provided")
 		}
@@ -57,7 +57,7 @@ func (cli *cli) processInput(input string) error {
 		// "get" can only accept a single word after it
 		if len(parts) == 2 {
 			data = parts[1]
-			fmt.Println("Get command with data:", data)
+			//fmt.Println("Get command with data:", data)
 		} else {
 			return fmt.Errorf("CLI Error: Invalid get command. Only provide the hash of the file after 'get'")
 		}
