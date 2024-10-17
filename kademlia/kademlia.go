@@ -136,14 +136,15 @@ func (kademlia *Kademlia) JoinNetwork() {
 		response := make(chan Message)
 		go kademlia.Network.SendPingMessage(&Contact{Address: kademlia.Network.BootstrapIP}, response) // ping bootstrap node so that it is added to routing table
 		r := <-response
-		log.Println(r.MsgType) // wait for response
 		if r.MsgType == "PONG" {
 			break
+		} else {
+			log.Println("Timeout joining network")
 		}
 	}
 
 	kademlia.LookupContact(*kademlia.Rt.me.ID) // lookup on this node to add close nodes to routing table
-	rtInfo := "Routing table:\n"
+	rtInfo := "[JOIN] Routing table after joining:\n"
 	currRt := kademlia.Network.Rt.buckets
 
 	for i, val := range currRt {
@@ -155,7 +156,6 @@ func (kademlia *Kademlia) JoinNetwork() {
 
 	fmt.Println(rtInfo)
 
-	fmt.Println("my id:", kademlia.Rt.me.ID)
 }
 
 // should return a string with the result. if the data could be found a string with the data and node it
