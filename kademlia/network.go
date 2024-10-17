@@ -231,7 +231,7 @@ func (network *Network) SendFindContactMessage(id KademliaID, contact *Contact, 
 
 // Send a find contact response to the subject message.
 func (network *Network) SendFindContactResponse(subject Message) {
-	closest := network.Rt.FindClosestContacts(&subject.Key, bucketSize)
+	closest := network.Rt.FindClosestContactsExclude(&subject.Key, bucketSize, *subject.Sender.ID)
 
 	m := Message{
 		MsgType:  "FIND_CONTACT_RESPONSE",
@@ -256,7 +256,7 @@ func (network *Network) SendFindDataMessage(hash KademliaID, contact *Contact, o
 
 // Send a find data response to the subject message.
 func (network *Network) SendFindDataResponse(subject Message) {
-	closest := network.Rt.FindClosestContacts(&subject.Key, bucketSize)
+	closest := network.Rt.FindClosestContactsExclude(&subject.Key, bucketSize, *subject.Sender.ID)
 
 	m := Message{
 		MsgType:  "FIND_DATA_RESPONSE",
